@@ -41,41 +41,45 @@ export function VideoSection() {
           {/* Halo bleu diffus derrière le lecteur */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -inset-x-10 -inset-y-12 -z-10 bg-[radial-gradient(circle,oklch(0.6_0.17_255/0.4),transparent_70%)] blur-2xl"
+            className="pointer-events-none absolute -inset-x-10 -inset-y-12 -z-10 bg-[radial-gradient(circle,oklch(0.6_0.17_255/0.35),transparent_70%)] blur-2xl"
           />
 
+          {/* Ondes bleues qui irradient vers l'extérieur, AUTOUR du lecteur (derrière le cadre) */}
+          {!reduce &&
+            [0, 1, 2, 3].map((i) => (
+              <motion.span
+                key={i}
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 aspect-square w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[oklch(0.72_0.15_250/0.65)]"
+                initial={{ scale: 0.85, opacity: 0.6 }}
+                animate={{ scale: 1.9, opacity: 0 }}
+                transition={{
+                  duration: 3.8,
+                  repeat: Infinity,
+                  ease: "easeOut",
+                  delay: i * 0.95,
+                }}
+              />
+            ))}
+
+          {/* Le lecteur : présent mais en 404 le temps de l'upload de la vidéo */}
           <div className="relative aspect-video overflow-hidden rounded-3xl border border-border bg-surface-2 shadow-[0_30px_80px_-30px_oklch(0.22_0.018_55/0.45)]">
-            {/* Fond dégradé bleu profond */}
             <div
               aria-hidden
-              className="absolute inset-0 bg-[radial-gradient(120%_120%_at_50%_50%,oklch(0.5_0.13_255/0.7),oklch(0.3_0.1_265/0.95))]"
+              className="absolute inset-0 bg-[radial-gradient(120%_120%_at_50%_30%,oklch(0.4_0.02_260/0.25),oklch(0.25_0.02_265/0.6))]"
             />
 
-            {/* Ondes bleues qui irradient vers l'extérieur depuis le centre */}
-            {!reduce &&
-              [0, 1, 2, 3].map((i) => (
-                <motion.span
-                  key={i}
-                  aria-hidden
-                  className="absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[oklch(0.82_0.13_240/0.7)]"
-                  initial={{ scale: 0.3, opacity: 0.65 }}
-                  animate={{ scale: 3.4, opacity: 0 }}
-                  transition={{
-                    duration: 3.6,
-                    repeat: Infinity,
-                    ease: "easeOut",
-                    delay: i * 0.9,
-                  }}
-                />
-              ))}
-
-            {/* Cœur lumineux au centre de l'onde */}
-            <motion.span
-              aria-hidden
-              className="absolute left-1/2 top-1/2 size-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,oklch(0.88_0.12_235/0.85),transparent_70%)] blur-md"
-              animate={reduce ? undefined : { scale: [1, 1.12, 1], opacity: [0.85, 1, 0.85] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+              <span className="font-display text-5xl font-semibold tracking-tight text-white/85 sm:text-6xl">
+                404
+              </span>
+              <p className="font-display text-lg font-semibold text-white">
+                Vidéo bientôt disponible
+              </p>
+              <p className="max-w-xs text-sm text-white/70">
+                Upload en cours — la présentation arrive très vite.
+              </p>
+            </div>
           </div>
         </motion.figure>
       </div>
