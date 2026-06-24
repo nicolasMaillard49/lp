@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>NMF Agence — Estime ton retour en 5 minutes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700;800&display=swap');
+  :root { --bg:#fff; --surface:#faf6ef; --surface2:#f3ece0; --ink:#241f1a; --muted:#6f655b; --primary:#c0801f; --primary-bright:#edb04a; --accent:#9b4a2e; --border:#e7ddcd; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  @page { size:A4; margin:0; }
+  html, body { background:var(--bg); color:var(--ink); font-family:'Manrope',system-ui,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { position:relative; width:210mm; height:297mm; padding:20mm 20mm 22mm; overflow:hidden; page-break-after:always; display:flex; flex-direction:column; }
+  .page:last-child { page-break-after:auto; }
+  .display { font-family:'Fraunces',Georgia,serif; font-weight:400; letter-spacing:-0.01em; }
+  .eyebrow { font-size:9.5pt; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--primary); }
+  .brand { display:flex; align-items:center; gap:8px; font-family:'Fraunces',serif; font-weight:600; font-size:13pt; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--primary); }
+  .badge { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:8px 16px; border-radius:999px; font-size:10pt; font-weight:600; }
+  .badge .star { color:var(--primary); }
+  .page-num { position:absolute; bottom:12mm; right:20mm; font-size:9pt; color:var(--muted); font-weight:600; }
+  .footline { position:absolute; bottom:12mm; left:20mm; font-size:9pt; color:var(--muted); font-weight:600; }
+  .glow { position:absolute; border-radius:50%; filter:blur(70px); z-index:0; }
+  .content { position:relative; z-index:1; flex:1; display:flex; flex-direction:column; }
+  h2.section { font-family:'Fraunces',serif; font-weight:400; font-size:25pt; line-height:1.1; margin-top:8px; }
+  .lead { font-size:11.5pt; color:var(--ink); line-height:1.5; margin-top:10px; max-width:155mm; }
+  .cover-title { font-size:38pt; line-height:1.05; }
+
+  table.cpc { width:100%; border-collapse:collapse; margin-top:16px; }
+  table.cpc th, table.cpc td { text-align:left; padding:9px 12px; font-size:10.5pt; border-bottom:1px solid var(--border); }
+  table.cpc th { font-size:9pt; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:700; }
+  table.cpc td.val { text-align:right; font-weight:700; color:var(--ink); }
+  table.cpc tr:nth-child(even) td { background:var(--surface); }
+
+  .geo { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .geo span { background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:6px 14px; font-size:10pt; font-weight:600; }
+  .geo span b { color:var(--primary); }
+
+  .step { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); }
+  .step:last-child { border-bottom:none; }
+  .step .no { flex-shrink:0; width:30px; height:30px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:600; font-size:13pt; }
+  .step b { font-size:11.5pt; }
+  .step span { display:block; font-size:10pt; color:var(--muted); margin-top:2px; line-height:1.4; }
+  .step code { background:var(--surface2); padding:1px 7px; border-radius:5px; font-size:10pt; font-weight:700; color:var(--ink); }
+
+  .example { margin-top:18px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px 22px; }
+  .example .ex-row { display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; font-size:11pt; }
+  .example .ex-row b { font-family:'Fraunces',serif; font-weight:600; font-size:14pt; }
+  .roi-badge { margin-top:14px; display:inline-flex; align-items:baseline; gap:10px; background:var(--ink); color:#fff; padding:12px 24px; border-radius:999px; }
+  .roi-badge b { font-family:'Fraunces',serif; font-weight:600; font-size:22pt; color:var(--primary-bright); }
+  .note { font-size:9pt; color:var(--muted); line-height:1.45; margin-top:12px; font-style:italic; }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="glow" style="width:150mm;height:150mm;background:rgba(237,176,74,.42);top:-40mm;right:-40mm;"></div>
+  <div class="glow" style="width:110mm;height:110mm;background:rgba(192,128,31,.18);bottom:-30mm;left:-30mm;"></div>
+  <div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="brand">NMF Agence<span class="dot"></span></div>
+      <div class="badge"><span class="star">★</span> Ressource 3 / 3</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+      <div class="eyebrow">Le mémo</div>
+      <h1 class="display cover-title">Estime ton retour en 5&nbsp;minutes.</h1>
+      <p class="lead" style="max-width:150mm;color:var(--muted);font-size:13pt;margin-top:16px;">Les bons chiffres + la formule, pour calculer toi-même ce que Google Ads peut te rapporter. Garde cette feuille sous la main pour notre rendez-vous.</p>
+    </div>
+    <div class="eyebrow" style="color:var(--muted);">Le coût d'un clic, métier par métier</div>
+    <table class="cpc">
+      <tr><th>Métier</th><th style="text-align:right;">CPC moyen</th><th style="text-align:right;">Budget conseillé</th></tr>
+      <tr><td>Serrurier</td><td class="val">6,00 €</td><td class="val">500 €/mois</td></tr>
+      <tr><td>Chauffagiste</td><td class="val">5,00 €</td><td class="val">450 €/mois</td></tr>
+      <tr><td>Plombier</td><td class="val">4,20 €</td><td class="val">500 €/mois</td></tr>
+      <tr><td>Électricien</td><td class="val">3,50 €</td><td class="val">450 €/mois</td></tr>
+      <tr><td>Maçon</td><td class="val">2,80 €</td><td class="val">400 €/mois</td></tr>
+      <tr><td>Peintre / Menuisier</td><td class="val">2,20 €</td><td class="val">400 €/mois</td></tr>
+      <tr><td>Carreleur / Paysagiste</td><td class="val">1,90 €</td><td class="val">400 €/mois</td></tr>
+    </table>
+    <div class="geo">
+      <span>Paris <b>×1,8</b></span>
+      <span>Lyon · Marseille · Bordeaux <b>×1,3</b></span>
+      <span>Villes moyennes <b>×1,0</b></span>
+      <span>Zones rurales <b>×0,7</b></span>
+    </div>
+    <p class="note" style="margin-top:14px;">Règle d'or : <b>400 €/mois minimum</b>. En dessous, la campagne ne récolte pas assez de données pour s'optimiser et performer — c'est le seuil de départ pour des résultats fiables.</p>
+  </div>
+  <div class="footline">Nicolas Maillard — NMF Agence</div>
+  <div class="page-num">01 / 02</div>
+</section>
+
+<section class="page">
+  <div class="glow" style="width:130mm;height:130mm;background:rgba(237,176,74,.30);top:-50mm;right:-50mm;"></div>
+  <div class="content">
+    <div class="eyebrow">La formule, étape par étape</div>
+    <h2 class="section">5 calculs et tu connais<br>ton retour potentiel.</h2>
+    <div style="margin-top:14px;">
+      <div class="step"><div class="no">1</div><div><b>Tes clics</b><span><code>Budget ÷ CPC</code> — ex. 400 € ÷ 3,50 € ≈ <b>114 clics</b></span></div></div>
+      <div class="step"><div class="no">2</div><div><b>Tes demandes de devis</b><span><code>Clics × 15 %</code> — ex. 114 × 0,15 ≈ <b>17 demandes</b></span></div></div>
+      <div class="step"><div class="no">3</div><div><b>Tes chantiers signés</b><span><code>Demandes × 40 %</code> — ex. 17 × 0,40 ≈ <b>6 chantiers</b></span></div></div>
+      <div class="step"><div class="no">4</div><div><b>Ton chiffre d'affaires</b><span><code>Chantiers × panier moyen</code> — ex. 6 × 800 € = <b>4 800 €</b></span></div></div>
+      <div class="step"><div class="no">5</div><div><b>Ton retour sur investissement</b><span><code>CA ÷ budget</code> — ex. 4 800 € ÷ 400 € = <b>×12</b></span></div></div>
+    </div>
+
+    <div class="example">
+      <div class="eyebrow" style="color:var(--muted);">Exemple — électricien, ville moyenne</div>
+      <div class="ex-row"><span>Budget investi</span><b>400 €</b></div>
+      <div class="ex-row"><span>Chantiers signés</span><b>6</b></div>
+      <div class="ex-row"><span>Chiffre d'affaires</span><b>4 800 €</b></div>
+      <div class="roi-badge"><span>Retour sur investissement</span><b>×12</b></div>
+    </div>
+
+    <p class="note">Taux volontairement conservateurs (conversion 15 %, transformation 40 %, panier 800 €). À ton rendez-vous, on remplace ces moyennes par TES vrais chiffres pour une estimation sur-mesure.</p>
+  </div>
+  <div class="footline">Estime ton retour en 5 minutes — NMF Agence</div>
+  <div class="page-num">02 / 02</div>
+</section>
+
+</body>
+</html>

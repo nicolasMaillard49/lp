@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   Design tokens — OKLCH. Mood : "golden hour mentorship".
+   Le fond reste blanc pur ; l'ambre (primary) porte toute la chaleur.
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  --color-bg: oklch(1 0 0);
+  --color-surface: oklch(0.976 0.006 78);
+  --color-surface-2: oklch(0.955 0.01 76);
+  --color-ink: oklch(0.22 0.018 55);
+  --color-muted: oklch(0.5 0.014 55);
+  --color-primary: oklch(0.67 0.15 64);
+  --color-primary-bright: oklch(0.83 0.155 78);
+  --color-accent: oklch(0.47 0.13 32);
+  --color-border: oklch(0.9 0.008 78);
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+  }
+
+  body {
+    position: relative;
+    width: 100%;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: oklch(0.83 0.155 78 / 0.35);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* Halo de miel ambiant — la signature chaleureuse */
+.glow-honey {
+  background: radial-gradient(
+    60% 60% at 50% 40%,
+    oklch(0.83 0.155 78 / 0.28),
+    oklch(0.83 0.155 78 / 0) 70%
+  );
+}
+
+/* Anneau qui pulse autour du bouton play */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.pulse-ring {
+  animation: pulse-ring 2.6s var(--ease-out-expo) infinite;
+}
+
+/* Marquee infini des métiers */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 32s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* Anneau dégradé qui tourne autour du lecteur vidéo (shimmer) */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.shimmer-ring {
+  background: conic-gradient(
+    from 0deg,
+    oklch(0.83 0.155 78 / 0),
+    oklch(0.83 0.155 78 / 0.9),
+    oklch(0.67 0.15 64 / 0.5),
+    oklch(0.47 0.13 32 / 0.8),
+    oklch(0.83 0.155 78 / 0)
+  );
+  animation: spin-slow 6s linear infinite;
+}
+
+/* Dégradé ambiant qui respire */
+@keyframes hue-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(2%, -3%, 0) scale(1.08); }
+}
+
+/* Smooth scroll Lenis */
+html.lenis,
+html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* Reflet qui traverse les boutons au survol */
+.btn-shine { position: relative; overflow: hidden; }
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateX(-160%) skewX(-18deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(1 0 0 / 0.35),
+    transparent
+  );
+}
+.btn-shine:hover::after {
+  transform: translateX(160%) skewX(-18deg);
+  transition: transform 0.75s var(--ease-out-expo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .pulse-ring,
+  .marquee-track,
+  .shimmer-ring { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,16 @@
+/node_modules
+/.next
+/out
+/build
+.DS_Store
+*.pem
+.env*
+!.env.example
+next-env.d.ts
+.vercel
+*.tsbuildinfo
+media-source/
+
+# vidéos (trop lourdes pour git, déployées via Vercel CLI)
+public/presentation.mp4
+*.mp4
