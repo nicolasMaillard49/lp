@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { site } from "@/config/site";
 import { Notice } from "./Notice";
 import { useTilt } from "./useTilt";
 import { StepBadge } from "./StepBadge";
@@ -18,16 +17,6 @@ export function VideoSection() {
         </div>
 
         <Notice />
-
-        <motion.h2
-          initial={{ opacity: 0, y: reduce ? 0 : 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="mx-auto mb-10 max-w-2xl text-center text-[clamp(1.6rem,4vw,2.5rem)] font-semibold leading-tight text-ink"
-        >
-          {site.video.label}
-        </motion.h2>
 
         <motion.figure
           {...tilt.handlers}
