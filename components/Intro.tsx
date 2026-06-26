@@ -41,14 +41,24 @@ export function Intro() {
             className="absolute -top-24 left-1/2 size-[80vmin] -translate-x-1/2 rounded-full bg-[oklch(0.88_0.14_88/0.5)] blur-3xl"
           />
 
-          <motion.span
-            initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-            className="relative font-display text-5xl font-medium text-white sm:text-6xl"
-          >
-            NMF<span className="text-[oklch(0.9_0.13_90)]">.</span>
-          </motion.span>
+          <div className="relative flex flex-col items-center gap-2">
+            <motion.span
+              initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              className="font-display text-5xl font-medium text-white sm:text-6xl"
+            >
+              NMF<span className="text-[oklch(0.9_0.13_90)]">.</span>
+            </motion.span>
+            <motion.span
+              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.32 }}
+              className="text-base font-medium tracking-[0.2em] text-white/85 uppercase sm:text-lg"
+            >
+              Bienvenue
+            </motion.span>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
