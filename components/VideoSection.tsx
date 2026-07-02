@@ -24,7 +24,9 @@ export function VideoSection() {
 
   return (
     <section id="video" className="relative overflow-clip px-5 py-20 sm:px-8 sm:py-28">
-      {/* Fond épuré : une fine texture de grain, sans motif. */}
+      {/* Fond sobre : une grille fine « papier technique » qui s'estompe aux bords,
+          + une texture de grain par-dessus. Aucun motif circulaire. */}
+      <div aria-hidden className="texture-grid pointer-events-none absolute inset-0 -z-10" />
       <div aria-hidden className="texture-grain pointer-events-none absolute inset-0 -z-10" />
 
       <div className="relative mx-auto max-w-4xl">
