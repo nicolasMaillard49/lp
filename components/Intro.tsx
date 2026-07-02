@@ -16,7 +16,7 @@ export function Intro() {
       setOpen(true);
       return;
     }
-    const t = setTimeout(() => setOpen(true), 950);
+    const t = setTimeout(() => setOpen(true), 400);
     return () => clearTimeout(t);
   }, [reduce]);
 
@@ -29,7 +29,7 @@ export function Intro() {
           key="intro"
           className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
           exit={{ y: "-100%" }}
-          transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
+          transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
         >
           {/* fond ambré drenched */}
           <div
@@ -45,7 +45,7 @@ export function Intro() {
             <motion.span
               initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
               className="font-display text-5xl font-medium text-white sm:text-6xl"
             >
               NMF<span className="text-[oklch(0.9_0.13_90)]">.</span>
@@ -53,7 +53,7 @@ export function Intro() {
             <motion.span
               initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.32 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
               className="text-base font-medium tracking-[0.2em] text-white/85 uppercase sm:text-lg"
             >
               Bienvenue

@@ -44,8 +44,10 @@ export function Hero() {
     hidden: {},
     show: { transition: { staggerChildren: reduce ? 0 : 0.08, delayChildren: 0.12 } },
   };
+  // opacity reste à 1 (titre = élément LCP : il doit être peint dès le SSR,
+  // sans attendre l'hydratation JS). L'effet « flou → net » + slide est conservé.
   const word = {
-    hidden: { opacity: 0, y: reduce ? 0 : 16, filter: reduce ? "blur(0px)" : "blur(8px)" },
+    hidden: { opacity: 1, y: reduce ? 0 : 16, filter: reduce ? "blur(0px)" : "blur(8px)" },
     show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.7, ease: EASE } },
   };
 
