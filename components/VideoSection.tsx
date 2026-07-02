@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { site } from "@/config/site";
-import { ContourWaves } from "./ContourWaves";
 import { Notice } from "./Notice";
 import { useTilt } from "./useTilt";
 import { StepBadge } from "./StepBadge";
@@ -25,11 +24,7 @@ export function VideoSection() {
 
   return (
     <section id="video" className="relative overflow-clip px-5 py-20 sm:px-8 sm:py-28">
-      {/* Courbes de niveau « carte topographique » embossées : couvrent toute
-          la section et butent sur les quatre bords (clippées par overflow-clip). */}
-      <ContourWaves />
-
-      {/* Grain texturé posé par-dessus les courbes → surface en relief tactile. */}
+      {/* Fond épuré : une fine texture de grain, sans motif. */}
       <div aria-hidden className="texture-grain pointer-events-none absolute inset-0 -z-10" />
 
       <div className="relative mx-auto max-w-4xl">
@@ -51,7 +46,7 @@ export function VideoSection() {
           {/* Halo bleu diffus derrière le lecteur */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -inset-x-10 -inset-y-12 -z-10 bg-[radial-gradient(circle,oklch(0.6_0.17_255/0.35),transparent_70%)] blur-2xl"
+            className="pointer-events-none absolute -inset-x-16 -inset-y-16 -z-10 bg-[radial-gradient(circle,oklch(0.68_0.06_250/0.22),transparent_70%)] blur-3xl"
           />
 
           <div className="relative aspect-video overflow-hidden rounded-3xl border border-border bg-surface-2 shadow-[0_30px_80px_-30px_oklch(0.22_0.018_55/0.45)]">
