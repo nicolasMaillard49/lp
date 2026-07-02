@@ -61,6 +61,12 @@ export function ContourWaves() {
       viewBox="0 0 240 240"
       preserveAspectRatio="none"
       className="pointer-events-none absolute inset-0 -z-10 h-full w-full overflow-visible"
+      style={{
+        // Emboss : ombre portée en bas-droite + rehaut clair en haut-gauche
+        // (lumière venant du haut-gauche) → les courbes semblent gravées en relief.
+        filter:
+          "drop-shadow(0.9px 0.9px 0.6px oklch(0.30 0.11 262 / 0.55)) drop-shadow(-0.9px -0.9px 0.4px oklch(0.99 0.02 250 / 0.85))",
+      }}
     >
       {CONTOURS.map((c, i) => (
         <path

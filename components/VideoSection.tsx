@@ -25,9 +25,12 @@ export function VideoSection() {
 
   return (
     <section id="video" className="relative overflow-clip px-5 py-20 sm:px-8 sm:py-28">
-      {/* Courbes de niveau « carte topographique » : couvrent toute la section
-          et butent sur les quatre bords (clippées par overflow-clip). */}
+      {/* Courbes de niveau « carte topographique » embossées : couvrent toute
+          la section et butent sur les quatre bords (clippées par overflow-clip). */}
       <ContourWaves />
+
+      {/* Grain texturé posé par-dessus les courbes → surface en relief tactile. */}
+      <div aria-hidden className="texture-grain pointer-events-none absolute inset-0 -z-10" />
 
       <div className="relative mx-auto max-w-4xl">
         <div className="mb-5 flex justify-center">
