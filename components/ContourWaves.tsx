@@ -1,18 +1,14 @@
-"use client";
-
-import { useEffect, useRef } from "react";
-import { animate, createTimeline, stagger, svg } from "animejs";
-
 /**
  * Courbes de niveau « carte topographique » autour du lecteur vidéo.
- * Chaque anneau est un tracé organique (pas un cercle) que anime.js fait
- * morpher en continu entre plusieurs formes — l'ondulation du relief — pendant
- * qu'il irradie vers l'extérieur. Le trait reste d'épaisseur constante
- * (non-scaling-stroke) pour le rendu « ligne de niveau ».
+ *
+ * Version STATIQUE : des anneaux concentriques fixes, rendus une seule fois
+ * côté serveur. Aucune animation, aucun JavaScript envoyé au client, aucune
+ * dépendance (anime.js retiré). Le rendu « ligne de niveau » est conservé
+ * grâce au trait d'épaisseur constante (non-scaling-stroke).
  */
 
 const CX = 120;
-const CY = 174; // centre d'émission abaissé, au niveau du lecteur vidéo
+const CY = 174; // centre d'émission au niveau du lecteur vidéo
 const N = 7; // points d'ancrage du tracé
 const BASE = 66; // rayon de base
 
@@ -38,93 +34,42 @@ function blob(radii: number[]): string {
   return `${d}Z`;
 }
 
-// Quelques formes organiques entre lesquelles les anneaux vont morpher.
+// Trois signatures organiques réutilisées d'un anneau à l'autre pour le relief.
 const SHAPES = [
   [1.0, 0.84, 1.1, 0.88, 1.06, 0.8, 1.02],
   [0.88, 1.08, 0.82, 1.12, 0.86, 1.05, 0.9],
   [1.08, 0.9, 1.0, 0.84, 1.12, 0.94, 0.86],
-].map((m) => blob(m.map((k) => k * BASE)));
+];
 
-const RINGS = 10;
+const RINGS = 11;
+
+// Anneaux concentriques figés : rayon croissant (bute sur les quatre bords),
+// opacité décroissante vers l'extérieur — l'ondulation du relief, immobile.
+const CONTOURS = Array.from({ length: RINGS }, (_, i) => {
+  const t = i / (RINGS - 1); // 0 (centre) → 1 (bords)
+  const scale = 0.5 + t * 2.6; // 0.5 → 3.1
+  const shape = SHAPES[i % SHAPES.length];
+  const d = blob(shape.map((k) => k * BASE * scale));
+  const opacity = +(0.34 * (1 - t) + 0.05).toFixed(3);
+  return { d, opacity };
+});
 
 export function ContourWaves() {
-  const ref = useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    const root = ref.current;
-    if (!root) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const paths = Array.from(
-      root.querySelectorAll<SVGPathElement>("path[data-ring]"),
-    );
-    const tpl = (n: number) =>
-      root.querySelector<SVGPathElement>(`path[data-shape="${n}"]`)!;
-
-    // Irradiation continue : les anneaux sont répartis pile sur la durée
-    // (stagger = duration / RINGS) pour qu'une onde reparte au moment où la
-    // précédente s'éteint — aucun temps mort. Amplitude large pour buter sur
-    // les quatre bords malgré le centre abaissé.
-    const radiate = animate(paths, {
-      scale: [0.28, 3.1],
-      // Fondu d'apparition au centre, puis pleine opacité tout le long, et
-      // disparition seulement en toute fin de course (près des bords) → aucune
-      // naissance visible ET aucune bande vide entre les ondes.
-      opacity: [0, 0.85, 0.85, 0.85, 0.85, 0],
-      rotate: [-6, 8],
-      duration: 5400,
-      delay: stagger(5400 / RINGS),
-      loop: true,
-      ease: "linear",
-    });
-
-    // Morphing : la forme ondule en continu, chaque anneau déphasé (durée
-    // légèrement différente pour qu'ils se désynchronisent avec le temps).
-    const morphs = paths.map((path, i) => {
-      const tl = createTimeline({
-        loop: true,
-        defaults: { ease: "inOutSine", duration: 2300 + i * 170 },
-      });
-      tl.add(path, { d: svg.morphTo(tpl(1)) })
-        .add(path, { d: svg.morphTo(tpl(2)) })
-        .add(path, { d: svg.morphTo(tpl(0)) });
-      return tl;
-    });
-
-    return () => {
-      radiate.revert();
-      morphs.forEach((m) => m.revert());
-    };
-  }, []);
-
   return (
     <svg
-      ref={ref}
       aria-hidden
       viewBox="0 0 240 240"
       preserveAspectRatio="none"
       className="pointer-events-none absolute inset-0 -z-10 h-full w-full overflow-visible"
     >
-      {/* Formes de référence (invisibles) vers lesquelles on morphe. */}
-      {SHAPES.map((d, i) => (
-        <path key={`tpl-${i}`} data-shape={i} d={d} fill="none" stroke="none" />
-      ))}
-
-      {/* Anneaux animés. */}
-      {Array.from({ length: RINGS }).map((_, i) => (
+      {CONTOURS.map((c, i) => (
         <path
-          key={`ring-${i}`}
-          data-ring
-          d={SHAPES[0]}
+          key={i}
+          d={c.d}
           fill="none"
-          stroke="oklch(0.5 0.2 258 / 0.3)"
+          stroke={`oklch(0.5 0.2 258 / ${c.opacity})`}
           strokeWidth={2.5}
           vectorEffect="non-scaling-stroke"
-          style={{
-            transformBox: "fill-box",
-            transformOrigin: "center",
-            opacity: 0,
-          }}
         />
       ))}
     </svg>
