@@ -11,8 +11,7 @@ next-env.d.ts
 *.tsbuildinfo
 media-source/
 
-# vidéos (trop lourdes pour git, déployées via Vercel CLI)
-public/presentation.mp4
-*.mp4
+# vidéos sources brutes (trop lourdes) — la version encodée public/presentation.mp4 est versionnée
+media-source/*.mp4
 
 .vercel
