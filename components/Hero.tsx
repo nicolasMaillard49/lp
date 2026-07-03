@@ -31,12 +31,13 @@ export function Hero() {
     hidden: {},
     show: { transition: { staggerChildren: reduce ? 0 : 0.1, delayChildren: 0.05 } },
   };
+  // Pas de `filter: blur` animé : c'est non-compositable (repaint CPU chaque
+  // frame → saccades). On garde opacity + translate (y), qui tournent sur GPU.
   const item = {
-    hidden: { opacity: 0, y: reduce ? 0 : 24, filter: reduce ? "blur(0px)" : "blur(10px)" },
+    hidden: { opacity: 0, y: reduce ? 0 : 24 },
     show: {
       opacity: 1,
       y: 0,
-      filter: "blur(0px)",
       transition: { duration: 0.8, ease: EASE },
     },
   };
@@ -44,11 +45,11 @@ export function Hero() {
     hidden: {},
     show: { transition: { staggerChildren: reduce ? 0 : 0.08, delayChildren: 0.12 } },
   };
-  // opacity reste à 1 (titre = élément LCP : il doit être peint dès le SSR,
-  // sans attendre l'hydratation JS). L'effet « flou → net » + slide est conservé.
+  // opacity reste à 1 (titre = élément LCP : peint dès le SSR). Slide seul,
+  // sans `filter: blur` (composité GPU → aucune saccade).
   const word = {
-    hidden: { opacity: 1, y: reduce ? 0 : 16, filter: reduce ? "blur(0px)" : "blur(8px)" },
-    show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.7, ease: EASE } },
+    hidden: { opacity: 1, y: reduce ? 0 : 16 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
   };
 
   return (

@@ -17,7 +17,7 @@ export function Header() {
     <header
       className={`fixed inset-x-0 top-0 z-40 border-b transition-colors duration-300 ${
         scrolled
-          ? "border-border bg-bg/85 backdrop-blur-md"
+          ? "border-border bg-bg/95"
           : "border-transparent bg-transparent"
       }`}
     >
@@ -32,7 +32,7 @@ export function Header() {
 
         <a
           href="#video"
-          className="rounded-full border border-border bg-bg/70 px-4 py-2 text-sm font-semibold text-ink backdrop-blur-md transition-colors hover:border-primary hover:text-primary"
+          className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-primary hover:text-primary"
         >
           La présentation
         </a>

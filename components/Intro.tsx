@@ -43,16 +43,16 @@ export function Intro() {
 
           <div className="relative flex flex-col items-center gap-2">
             <motion.span
-              initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
               className="font-display text-5xl font-medium text-white sm:text-6xl"
             >
               NMF<span className="text-[oklch(0.9_0.13_90)]">.</span>
             </motion.span>
             <motion.span
-              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
               className="text-base font-medium tracking-[0.2em] text-white/85 uppercase sm:text-lg"
             >
