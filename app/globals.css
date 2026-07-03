@@ -24,6 +24,8 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Décale les ancres (#video…) sous le header fixe. */
+    scroll-padding-top: 5rem;
     -webkit-text-size-adjust: 100%;
     overflow-x: clip;
   }
@@ -133,14 +135,6 @@
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(2%, -3%, 0) scale(1.08); }
 }
-
-/* Smooth scroll Lenis */
-html.lenis,
-html.lenis body { height: auto; }
-.lenis.lenis-smooth { scroll-behavior: auto !important; }
-.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
-.lenis.lenis-stopped { overflow: hidden; }
-.lenis.lenis-smooth iframe { pointer-events: none; }
 
 /* Reflet qui traverse les boutons au survol */
 .btn-shine { position: relative; overflow: hidden; }

@@ -1,4 +1,3 @@
-import { SmoothScroll } from "@/components/SmoothScroll";
 import { Intro } from "@/components/Intro";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { Header } from "@/components/Header";
@@ -16,7 +15,6 @@ import { Footer } from "@/components/Footer";
 export default function Home() {
   return (
     <>
-      <SmoothScroll />
       <Intro />
       <ScrollProgress />
       <Header />
