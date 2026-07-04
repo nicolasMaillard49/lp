@@ -12,6 +12,15 @@ import { ProgressBar } from "./ProgressBar";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+/** Taille de police du titre selon la longueur de la question, pour rester compact. */
+function questionSizeClass(q: string): string {
+  const n = q.length;
+  if (n <= 32) return "text-4xl sm:text-6xl";
+  if (n <= 55) return "text-3xl sm:text-5xl";
+  if (n <= 85) return "text-[1.7rem] leading-tight sm:text-4xl";
+  return "text-2xl leading-snug sm:text-[2rem]";
+}
+
 function validate(step: Step, value: unknown): string | null {
   if (step.type === "stars") {
     return typeof value === "number" ? null : "Choisis une note.";
@@ -41,6 +50,7 @@ export function AuditForm() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [direction, setDirection] = useState(1);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   const step = steps[index];
   const isLast = index === TOTAL_STEPS - 1;
@@ -114,10 +124,54 @@ export function AuditForm() {
           </span>
         </div>
         {!done && <ProgressBar current={index + 1} total={TOTAL_STEPS} />}
+
+        {!done && showDisclaimer && (
+          <div className="relative mt-4 flex items-start gap-3 rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 pr-10">
+            <svg
+              viewBox="0 0 20 20"
+              className="mt-0.5 size-5 shrink-0 text-accent"
+              fill="none"
+              aria-hidden
+            >
+              <path
+                d="M10 2.5 18.5 17H1.5L10 2.5Z"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M10 8v4"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <circle cx="10" cy="14.5" r="0.4" fill="currentColor" stroke="currentColor" strokeWidth="0.8" />
+            </svg>
+            <p className="text-xs leading-relaxed text-ink sm:text-sm">
+              <span className="font-bold text-accent">{form.disclaimerTitle}</span>{" "}
+              {form.disclaimer}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDisclaimer(false)}
+              aria-label="Fermer l'avertissement"
+              className="absolute right-2 top-2 grid size-7 place-items-center rounded-full text-accent/70 transition-colors hover:bg-accent/10 hover:text-accent"
+            >
+              <svg viewBox="0 0 16 16" fill="none" className="size-4">
+                <path
+                  d="M4 4l8 8M12 4l-8 8"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Corps */}
-      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center py-8">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-start pt-10 pb-8 sm:pt-16">
         {done ? (
           <DoneScreen />
         ) : (
@@ -130,16 +184,30 @@ export function AuditForm() {
               exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction * -40 }}
               transition={{ duration: 0.35, ease: EASE }}
             >
-              <p className="mb-2 font-display text-sm font-semibold text-electric">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-              <h1 className="mb-2 font-display text-2xl leading-tight text-ink sm:text-3xl">
-                {step.question}
-              </h1>
-              {step.help && (
-                <p className="mb-6 text-sm text-muted">{step.help}</p>
-              )}
-              {!step.help && <div className="mb-6" />}
+              <div className="relative isolate mb-8 py-4">
+                {/* Halo vert, même style doux que les halos orange de l'aurora */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-x-12 -inset-y-16 -z-10 rounded-full blur-[90px]"
+                  style={{
+                    background:
+                      "radial-gradient(62% 60% at 40% 42%, oklch(0.72 0.19 150 / 0.62), oklch(0.72 0.19 150 / 0) 72%)",
+                  }}
+                />
+                <p className="mb-3 font-helvetica text-sm font-bold text-white/70">
+                  {String(index + 1).padStart(2, "0")}
+                </p>
+                <h1
+                  className={`font-helvetica font-bold text-balance text-white [text-shadow:0_2px_20px_oklch(0.3_0.12_240/0.6)] ${questionSizeClass(step.question)}`}
+                >
+                  {step.question}
+                </h1>
+                {step.help && (
+                  <p className="mt-2 text-sm text-white/75 [text-shadow:0_1px_12px_oklch(0.3_0.1_240/0.5)]">
+                    {step.help}
+                  </p>
+                )}
+              </div>
 
               <StepField
                 key={step.key}
@@ -184,6 +252,16 @@ export function AuditForm() {
           </AnimatePresence>
         )}
       </div>
+
+      {/* Logo NMF (favicon) en bas au centre */}
+      <footer className="mx-auto mt-4 flex w-full justify-center pb-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-nmf.png"
+          alt="NMF Agence"
+          className="h-10 w-auto opacity-85"
+        />
+      </footer>
     </main>
   );
 }

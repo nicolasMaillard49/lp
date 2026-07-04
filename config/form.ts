@@ -6,11 +6,15 @@
 import { site } from "./site";
 
 export const form = {
-  title: "Audit de situation",
+  title: "Formulaire de diagnostic",
   intro: "Obtiens un audit gratuit de ta situation. Ça prend 2 minutes.",
   submitLabel: "Recevoir mon audit",
   /** Redirection après soumission. */
   redirectTo: "/bienvenue",
+  /** Avertissement affiché en tête du formulaire. */
+  disclaimerTitle: "ATTENTION : Vos réponses sont analysées.",
+  disclaimer:
+    "Nous nous réservons le droit d'annuler l'appel selon les éléments fournis, notamment concernant vos objectifs, votre capacité d'investissement et votre volonté d'avancer sur vos problématiques actuelles.",
 } as const;
 
 /** Type d'écran de chaque étape. */
