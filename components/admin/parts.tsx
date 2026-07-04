@@ -1,8 +1,8 @@
 import type { Bucket, FunnelStep, TimePoint, LeadRow } from "@/lib/statsTypes";
 
-// Palette admin (façon Tally : blanc, neutre, une touche ambre).
+// Palette admin (façon Tally : blanc, neutre, une touche ambre NMF).
 const BAR_BG = "oklch(0.955 0.006 80)";
-const BAR_FILL = "oklch(0.9 0.028 80)";
+const BAR_FILL = "oklch(0.9 0.05 75)";
 
 export function StatCard({
   label,
@@ -16,10 +16,16 @@ export function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-white px-5 py-4">
-      <p className="font-sans text-xs font-medium text-muted">{label}</p>
+    <div
+      className={`rounded-xl border px-5 py-4 transition-colors ${
+        accent ? "border-primary/25 bg-primary/[0.04]" : "border-border bg-white"
+      }`}
+    >
+      <p className="font-sans text-[0.7rem] font-medium uppercase tracking-wide text-muted">
+        {label}
+      </p>
       <p
-        className={`mt-1.5 font-sans text-3xl font-semibold tracking-tight ${
+        className={`mt-1.5 font-sans text-3xl font-semibold tracking-tight tabular-nums ${
           accent ? "text-primary" : "text-ink"
         }`}
       >
@@ -118,8 +124,21 @@ export function FunnelChart({ funnel }: { funnel: FunnelStep[] }) {
                 </div>
               </div>
             </div>
-            <span className="w-24 shrink-0 text-right font-sans text-xs text-accent">
-              {f.abandonHere > 0 ? `−${f.abandonHere} abandon${f.abandonHere > 1 ? "s" : ""}` : ""}
+            <span className="flex w-24 shrink-0 items-center justify-end gap-1 font-sans text-xs text-accent">
+              {f.abandonHere > 0 && (
+                <>
+                  <svg viewBox="0 0 12 12" className="size-3" fill="none" aria-hidden>
+                    <path
+                      d="M6 2v6m0 0L3.5 5.5M6 8l2.5-2.5"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  {f.abandonHere} abandon{f.abandonHere > 1 ? "s" : ""}
+                </>
+              )}
             </span>
           </li>
         );

@@ -44,23 +44,31 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-[100svh] bg-[oklch(0.985_0.004_80)]">
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
-        {/* En-tête */}
-        <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="font-sans text-2xl font-semibold tracking-tight text-ink">
-              Formulaire de diagnostic
-            </h1>
-            <p className="font-sans text-sm text-muted">Statistiques du funnel</p>
+      {/* En-tête sticky */}
+      <header className="sticky top-0 z-20 border-b border-border bg-[oklch(0.985_0.004_80)]/85 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-8">
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-nmf.png" alt="NMF Agence" className="size-8 rounded-md" />
+            <div>
+              <h1 className="font-display text-xl font-semibold leading-none text-ink">
+                Diagnostic<span className="text-primary">.</span>
+              </h1>
+              <p className="mt-0.5 font-sans text-xs text-muted">
+                Statistiques du funnel
+              </p>
+            </div>
           </div>
           <a
             href="/api/admin/export"
-            className="rounded-lg border border-border bg-white px-4 py-2 font-sans text-sm font-medium text-ink transition-colors hover:border-ink"
+            className="rounded-lg border border-border bg-white px-3.5 py-2 font-sans text-sm font-medium text-ink transition-colors hover:border-ink"
           >
-            Exporter en CSV
+            Exporter CSV
           </a>
-        </header>
+        </div>
+      </header>
 
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
         {!stats.configured && (
           <div className="mb-6 rounded-xl border border-accent/40 bg-accent/5 p-4 font-sans text-sm text-ink">
             Supabase n'est pas configuré : les statistiques sont vides.
