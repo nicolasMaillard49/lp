@@ -1,37 +1,12 @@
-import { Intro } from "@/components/Intro";
-import { ScrollProgress } from "@/components/ScrollProgress";
-import { Header } from "@/components/Header";
-import { Hero } from "@/components/Hero";
-import { Marquee } from "@/components/Marquee";
-import { VideoSection } from "@/components/VideoSection";
-import { Agenda } from "@/components/Agenda";
-import { Resource } from "@/components/Resource";
-import { Prepare } from "@/components/Prepare";
-import { Method } from "@/components/Method";
-import { Proof } from "@/components/Proof";
-import { FinalCta } from "@/components/FinalCta";
-import { Footer } from "@/components/Footer";
+import type { Metadata } from "next";
+import { AuditForm } from "@/components/form/AuditForm";
+
+export const metadata: Metadata = {
+  title: "Audit gratuit de ta situation — NMF Agence",
+  description:
+    "Réponds à quelques questions et obtiens un audit gratuit de ta situation. NMF Agence accompagne les artisans à remplir leur agenda.",
+};
 
 export default function Home() {
-  return (
-    <>
-      <Intro />
-      <ScrollProgress />
-      <Header />
-      <main>
-        <Hero />
-        <Marquee />
-        {/* Flow de confirmation — 4 étapes numérotées */}
-        <VideoSection />
-        <Agenda />
-        <Resource />
-        <Prepare />
-        {/* Réassurance */}
-        <Method />
-        <Proof />
-        <FinalCta />
-      </main>
-      <Footer />
-    </>
-  );
+  return <AuditForm />;
 }

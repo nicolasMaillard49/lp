@@ -81,7 +81,7 @@ export function Hero() {
           variants={item}
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 px-4 py-1.5 text-sm font-medium text-muted backdrop-blur-sm"
         >
-          <svg className="size-4 text-primary" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <svg className="size-4 text-electric" viewBox="0 0 16 16" fill="none" aria-hidden>
             <circle cx="8" cy="8" r="7" fill="currentColor" opacity="0.15" />
             <path
               d="M5 8.2 7 10l4-4.2"

@@ -1,28 +1,37 @@
 import { site } from "@/config/site";
 
 /**
- * Bandeau défilant des métiers — ancre la page dans le monde artisan
- * et apporte du mouvement continu. Pause au survol.
+ * Liste des métiers accompagnés, sur UNE seule ligne horizontale qui
+ * occupe toute la largeur (pas d'empilement, pas de scroll). En mobile,
+ * les métiers qui débordent sont simplement coupés (overflow hidden).
  */
 export function Marquee() {
-  const items = [...site.metiers, ...site.metiers];
-
   return (
-    <div className="relative overflow-hidden border-y border-border bg-surface py-5">
-      {/* Fondus latéraux */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-bg to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-bg to-transparent" />
-
-      <div className="marquee-track flex w-max items-center gap-10 whitespace-nowrap">
-        {items.map((metier, i) => (
-          <span key={i} className="flex items-center gap-10">
-            <span className="font-display text-xl font-medium text-ink/80">
+    <div className="w-full overflow-hidden border-y border-border bg-surface py-6">
+      <ul className="flex w-full flex-nowrap items-center justify-between gap-4 px-5 sm:px-8">
+        {site.metiers.map((metier) => (
+          <li key={metier} className="flex shrink-0 items-center gap-1.5">
+            <span className="font-display text-base font-medium text-ink/85">
               {metier}
             </span>
-            <span className="size-1.5 rounded-full bg-primary/60" aria-hidden />
-          </span>
+            <svg
+              className="size-4 shrink-0 text-electric"
+              viewBox="0 0 20 20"
+              fill="none"
+              aria-hidden
+            >
+              <circle cx="10" cy="10" r="9" fill="currentColor" opacity="0.15" />
+              <path
+                d="M6.2 10.4 8.7 13l5.1-5.6"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
