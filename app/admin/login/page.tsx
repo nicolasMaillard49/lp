@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Roboto } from "next/font/google";
+
+const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "700"] });
+
+// Palette Berry (cohérente avec le dashboard).
+const BG = "#eef2f6";
+const PRIMARY = "#5e35b1";
+const PRIMARY_LIGHT = "#ede7f6";
+const INK = "#121926";
+const MUTED = "#697586";
+const DIVIDER = "#e3e8ef";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -34,13 +45,21 @@ export default function AdminLogin() {
   }
 
   return (
-    <main className="grid min-h-[100svh] place-items-center px-5">
+    <main className={`${roboto.className} grid min-h-[100svh] place-items-center px-5`} style={{ background: BG }}>
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8"
+        className="w-full max-w-sm rounded-xl border p-8"
+        style={{ background: "#fff", borderColor: DIVIDER }}
       >
-        <h1 className="mb-1 font-display text-2xl text-ink">Dashboard</h1>
-        <p className="mb-6 text-sm text-muted">Accès protégé — mot de passe requis.</p>
+        <div className="mb-5 flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-nmf.png" alt="NMF Agence" className="size-9 rounded-md" />
+          <div>
+            <h1 className="text-lg font-bold leading-none" style={{ color: INK, fontFamily: "inherit" }}>Diagnostic</h1>
+            <p className="mt-0.5 text-xs" style={{ color: MUTED }}>Dashboard NMF Agence</p>
+          </div>
+        </div>
+        <p className="mb-4 text-sm" style={{ color: MUTED }}>Accès protégé — mot de passe requis.</p>
         <input
           type="password"
           value={password}
@@ -48,15 +67,17 @@ export default function AdminLogin() {
           placeholder="Mot de passe"
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
-          className="mb-3 w-full rounded-lg border border-border bg-bg px-4 py-3 text-ink outline-none focus:border-electric"
+          className="mb-3 w-full rounded-lg border px-4 py-3 text-sm outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(94,53,177,0.15)]"
+          style={{ borderColor: DIVIDER, color: INK, background: PRIMARY_LIGHT + "40" }}
         />
-        {error && <p className="mb-3 text-sm font-medium text-accent">{error}</p>}
+        {error && <p className="mb-3 text-sm font-medium" style={{ color: "#c62828" }}>{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-primary py-3 font-semibold text-white disabled:opacity-60"
+          className="w-full rounded-lg py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ background: PRIMARY }}
         >
-          {loading ? "…" : "Entrer"}
+          {loading ? "…" : "Se connecter"}
         </button>
       </form>
     </main>

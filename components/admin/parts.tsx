@@ -1,112 +1,121 @@
 import type { Bucket, FunnelStep, TimePoint, LeadRow } from "@/lib/statsTypes";
 
-// ── Palette light-vivid (fond clair, data saturée) ──
-const TRACK = "oklch(0.93 0.008 80)";
-const AMBER = "oklch(0.8 0.16 78)";
-const AMBER_DIM = "oklch(0.72 0.16 62)";
-const ELECTRIC = "oklch(0.58 0.21 252)";
-const RED = "oklch(0.6 0.22 25)";
-const INK = "oklch(0.25 0.02 60)";
-const MUTED = "oklch(0.5 0.015 60)";
-const ON_BAR = "oklch(0.22 0.04 60)";
+// ── Palette Berry (Free MUI admin template) ──
+export const BERRY = {
+  bg: "#eef2f6",
+  paper: "#ffffff",
+  divider: "#e3e8ef",
+  ink: "#121926",
+  muted: "#697586",
+  primary: "#673ab7", // violet
+  primaryDark: "#5e35b1",
+  primary800: "#4527a0",
+  primaryLight: "#ede7f6",
+  primary200: "#b39ddb",
+  secondary: "#2196f3", // bleu
+  secondaryDark: "#1e88e5",
+  secondary800: "#1565c0",
+  secondaryLight: "#e3f2fd",
+  warningLight: "#fff8e1",
+  warningDark: "#ffc107",
+  error: "#f44336",
+  success: "#00c853",
+};
 
-const barGrad = `linear-gradient(90deg, ${AMBER_DIM}, ${AMBER})`;
-const barGlow = "0 6px 16px -6px oklch(0.8 0.16 78 / 0.55)";
-
-export function StatCard({
+/* ────────────────────────────────────────────────────────────
+ * Cartes KPI « Berry » — dégradé violet/bleu + cercles décoratifs
+ * (la signature visuelle du template).
+ * ──────────────────────────────────────────────────────────── */
+export function GradientCard({
   label,
   value,
   sub,
-  accent,
+  variant = "purple",
+  icon,
 }: {
   label: string;
   value: string;
   sub?: string;
-  accent?: boolean;
+  variant?: "purple" | "blue";
+  icon: React.ReactNode;
 }) {
+  const bg = variant === "purple" ? BERRY.primaryDark : BERRY.secondaryDark;
+  const circle = variant === "purple" ? BERRY.primary800 : BERRY.secondary800;
+  const labelColor = variant === "purple" ? BERRY.primary200 : "#90caf9";
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border p-5 ${
-        accent
-          ? "border-[oklch(0.8_0.16_78/0.35)] bg-[oklch(0.97_0.045_84)]"
-          : "border-black/8 bg-white"
-      }`}
+      className="relative overflow-hidden rounded-xl p-6"
+      style={{ background: bg, color: "#fff" }}
     >
-      {accent && (
+      {/* Cercles décoratifs Berry (coin haut-droit) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute rounded-full"
+        style={{ width: 210, height: 210, top: -85, right: -95, background: circle }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute rounded-full"
+        style={{ width: 210, height: 210, top: -125, right: -15, background: circle, opacity: 0.5 }}
+      />
+      <div className="relative">
         <div
-          aria-hidden
-          className="pointer-events-none absolute -right-8 -top-10 size-28 rounded-full blur-2xl"
-          style={{ background: "oklch(0.8 0.16 78 / 0.3)" }}
-        />
-      )}
-      <p className="font-helvetica text-[0.7rem] font-semibold uppercase tracking-widest" style={{ color: MUTED }}>
-        {label}
-      </p>
-      <p
-        className="mt-2 font-helvetica text-4xl font-bold tabular-nums"
-        style={{ color: accent ? AMBER_DIM : INK }}
-      >
-        {value}
-      </p>
-      {sub && <p className="mt-1 font-helvetica text-xs" style={{ color: MUTED }}>{sub}</p>}
+          className="grid size-11 place-items-center rounded-lg"
+          style={{ background: circle }}
+        >
+          {icon}
+        </div>
+        <p className="mt-4 text-3xl font-bold tabular-nums">{value}</p>
+        <p className="mt-1 text-sm font-medium" style={{ color: labelColor }}>
+          {label}
+        </p>
+        {sub && (
+          <p className="mt-0.5 text-xs" style={{ color: labelColor, opacity: 0.8 }}>
+            {sub}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
 
-/** Signature : jauge de complétion lumineuse. */
-export function HeroRing({
-  rate,
-  completed,
-  started,
-}: {
-  rate: number;
-  completed: number;
-  started: number;
-}) {
-  const R = 54;
-  const C = 2 * Math.PI * R;
-  const clamped = Math.max(0, Math.min(1, rate));
-  const pct = Math.round(clamped * 100);
+/** Petite carte sombre (violet) — TotalIncomeDarkCard de Berry. */
+export function SmallDarkCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="relative flex items-center gap-6">
-      <div className="relative shrink-0">
-        <svg viewBox="0 0 130 130" className="size-36 -rotate-90">
-          <defs>
-            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={AMBER} />
-              <stop offset="100%" stopColor={ELECTRIC} />
-            </linearGradient>
-          </defs>
-          <circle cx="65" cy="65" r={R} fill="none" stroke={TRACK} strokeWidth="11" />
-          <circle
-            cx="65"
-            cy="65"
-            r={R}
-            fill="none"
-            stroke="url(#ringGrad)"
-            strokeWidth="11"
-            strokeLinecap="round"
-            strokeDasharray={C}
-            strokeDashoffset={C - C * clamped}
-            style={{ filter: "drop-shadow(0 3px 8px oklch(0.8 0.16 78 / 0.5))" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-helvetica text-3xl font-bold tabular-nums" style={{ color: INK }}>
-            {pct}%
-          </span>
-          <span className="font-helvetica text-[0.65rem] uppercase tracking-widest" style={{ color: MUTED }}>
-            complétion
-          </span>
+    <div
+      className="relative overflow-hidden rounded-xl p-4"
+      style={{ background: BERRY.primaryDark, color: "#fff" }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute rounded-full"
+        style={{ width: 160, height: 160, top: -95, right: -70, background: BERRY.primary800, opacity: 0.6 }}
+      />
+      <div className="relative flex items-center gap-4">
+        <div className="grid size-11 shrink-0 place-items-center rounded-lg" style={{ background: BERRY.primary800 }}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-xl font-bold tabular-nums leading-tight">{value}</p>
+          <p className="text-xs font-medium" style={{ color: BERRY.primary200 }}>{label}</p>
         </div>
       </div>
-      <div className="space-y-1">
-        <p className="font-helvetica text-sm" style={{ color: MUTED }}>
-          <span className="font-bold" style={{ color: INK }}>{completed}</span> formulaires terminés
-        </p>
-        <p className="font-helvetica text-sm" style={{ color: MUTED }}>
-          sur <span className="font-bold" style={{ color: INK }}>{started}</span> commencés
-        </p>
+    </div>
+  );
+}
+
+/** Petite carte claire — TotalIncomeLightCard de Berry. */
+export function SmallLightCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border p-4" style={{ background: BERRY.paper, borderColor: BERRY.divider }}>
+      <div className="flex items-center gap-4">
+        <div className="grid size-11 shrink-0 place-items-center rounded-lg" style={{ background: BERRY.warningLight, color: BERRY.warningDark }}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-xl font-bold tabular-nums leading-tight" style={{ color: BERRY.ink }}>{value}</p>
+          <p className="text-xs font-medium" style={{ color: BERRY.muted }}>{label}</p>
+        </div>
       </div>
     </div>
   );
@@ -124,54 +133,45 @@ export function SectionCard({
   right?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-black/8 bg-white p-5 sm:p-6">
-      <div className="mb-5 flex items-start justify-between gap-3">
+    <section className="rounded-xl border" style={{ background: BERRY.paper, borderColor: BERRY.divider }}>
+      <div className="flex items-start justify-between gap-3 border-b px-5 py-4" style={{ borderColor: BERRY.divider }}>
         <div>
-          <h2 className="font-helvetica text-base font-semibold" style={{ color: INK }}>{title}</h2>
-          {subtitle && <p className="mt-0.5 font-helvetica text-xs" style={{ color: MUTED }}>{subtitle}</p>}
+          <h2 className="text-[0.95rem] font-semibold" style={{ color: BERRY.ink, fontFamily: "inherit" }}>{title}</h2>
+          {subtitle && <p className="mt-0.5 text-xs" style={{ color: BERRY.muted }}>{subtitle}</p>}
         </div>
         {right}
       </div>
-      {children}
+      <div className="p-5">{children}</div>
     </section>
   );
 }
 
-/** Barres à dégradé lumineux (magnitude = une seule teinte ambre). */
+/** Barres horizontales — piste violet clair, remplissage violet Berry. */
 export function BarList({ buckets }: { buckets: Bucket[] }) {
   const max = Math.max(1, ...buckets.map((b) => b.count));
   const total = buckets.reduce((s, b) => s + b.count, 0);
-  if (!buckets.length) return <p className="font-helvetica text-sm" style={{ color: MUTED }}>Aucune donnée.</p>;
+  if (!buckets.length) return <p className="text-sm" style={{ color: BERRY.muted }}>Aucune donnée.</p>;
   return (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="flex flex-col gap-3">
       {buckets.map((b) => {
         const pct = (b.count / max) * 100;
         const share = total ? Math.round((b.count / total) * 100) : 0;
-        const on = b.count > 0;
         return (
-          <li key={b.label} className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <div
-                className="flex h-9 items-center rounded-lg px-3"
-                style={{
-                  width: `max(${pct}%, 7rem)`,
-                  background: on ? barGrad : TRACK,
-                  boxShadow: on ? barGlow : "none",
-                }}
-              >
-                <span
-                  className="truncate font-helvetica text-sm font-medium"
-                  style={{ color: on ? ON_BAR : MUTED }}
-                  title={b.label}
-                >
-                  {b.label}
-                </span>
-              </div>
+          <li key={b.label}>
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <span className="truncate text-sm font-medium" style={{ color: BERRY.ink }} title={b.label}>
+                {b.label}
+              </span>
+              <span className="shrink-0 text-sm tabular-nums" style={{ color: BERRY.muted }}>
+                {b.count} <span className="text-xs opacity-70">({share}%)</span>
+              </span>
             </div>
-            <span className="w-16 shrink-0 text-right font-helvetica text-sm tabular-nums" style={{ color: MUTED }}>
-              {b.count}
-              <span className="ml-1 text-xs opacity-70">{share}%</span>
-            </span>
+            <div className="h-2 overflow-hidden rounded-full" style={{ background: BERRY.primaryLight }}>
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${pct}%`, background: b.count ? BERRY.primary : "transparent" }}
+              />
+            </div>
           </li>
         );
       })}
@@ -182,47 +182,32 @@ export function BarList({ buckets }: { buckets: Bucket[] }) {
 export function FunnelChart({ funnel }: { funnel: FunnelStep[] }) {
   const max = Math.max(1, ...funnel.map((f) => f.answered));
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul className="flex flex-col gap-2.5">
       {funnel.map((f) => {
         const pct = (f.answered / max) * 100;
         return (
           <li key={f.step} className="flex items-center gap-3">
-            <span className="w-5 shrink-0 text-right font-helvetica text-xs tabular-nums" style={{ color: MUTED }}>
+            <span
+              className="grid size-6 shrink-0 place-items-center rounded-md text-xs font-bold tabular-nums"
+              style={{ background: BERRY.primaryLight, color: BERRY.primaryDark }}
+            >
               {f.step}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="mb-1 truncate font-helvetica text-xs" style={{ color: MUTED }} title={f.label}>
-                {f.label}
-              </p>
-              <div className="h-7 overflow-hidden rounded-lg" style={{ background: TRACK }}>
-                <div
-                  className="flex h-full items-center rounded-lg px-2"
-                  style={{ width: `max(${pct}%, 2rem)`, background: barGrad, boxShadow: barGlow }}
-                >
-                  <span className="font-helvetica text-xs font-bold tabular-nums" style={{ color: ON_BAR }}>
-                    {f.answered}
-                  </span>
-                </div>
+              <div className="mb-1 flex items-center justify-between gap-3">
+                <p className="truncate text-xs" style={{ color: BERRY.muted }} title={f.label}>
+                  {f.label}
+                </p>
+                <span className="shrink-0 text-xs font-semibold tabular-nums" style={{ color: BERRY.ink }}>
+                  {f.answered}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full" style={{ background: BERRY.primaryLight }}>
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: BERRY.primary }} />
               </div>
             </div>
-            <span
-              className="flex w-24 shrink-0 items-center justify-end gap-1 font-helvetica text-xs font-medium"
-              style={{ color: f.abandonHere > 0 ? RED : "transparent" }}
-            >
-              {f.abandonHere > 0 && (
-                <>
-                  <svg viewBox="0 0 12 12" className="size-3" fill="none" aria-hidden>
-                    <path
-                      d="M6 2v6m0 0L3.5 5.5M6 8l2.5-2.5"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  {f.abandonHere} abandon{f.abandonHere > 1 ? "s" : ""}
-                </>
-              )}
+            <span className="w-24 shrink-0 text-right text-xs font-medium" style={{ color: f.abandonHere > 0 ? BERRY.error : "transparent" }}>
+              {f.abandonHere > 0 ? `−${f.abandonHere} abandon${f.abandonHere > 1 ? "s" : ""}` : "—"}
             </span>
           </li>
         );
@@ -237,30 +222,23 @@ export function RatingDonut({ average, count }: { average: number; count: number
     <div className="flex flex-col items-center gap-3 py-2">
       <div
         className="grid size-40 place-items-center rounded-full"
-        style={{
-          background: `conic-gradient(${AMBER} ${pct}%, ${TRACK} 0)`,
-          filter: "drop-shadow(0 4px 12px oklch(0.8 0.16 78 / 0.35))",
-        }}
+        style={{ background: `conic-gradient(${BERRY.primary} ${pct}%, ${BERRY.primaryLight} 0)` }}
       >
-        <div className="grid size-28 place-items-center rounded-full bg-white text-center">
+        <div className="grid size-28 place-items-center rounded-full text-center" style={{ background: BERRY.paper }}>
           <div>
-            <div className="font-helvetica text-3xl font-bold" style={{ color: INK }}>
-              {average.toFixed(1)}
-            </div>
-            <div className="font-helvetica text-xs" style={{ color: MUTED }}>/ 5 moyenne</div>
+            <div className="text-3xl font-bold" style={{ color: BERRY.ink }}>{average.toFixed(1)}</div>
+            <div className="text-xs" style={{ color: BERRY.muted }}>/ 5 moyenne</div>
           </div>
         </div>
       </div>
-      <p className="font-helvetica text-xs" style={{ color: MUTED }}>
-        {count} réponse{count > 1 ? "s" : ""}
-      </p>
+      <p className="text-xs" style={{ color: BERRY.muted }}>{count} réponse{count > 1 ? "s" : ""}</p>
     </div>
   );
 }
 
 export function TimeChart({ points }: { points: TimePoint[] }) {
   if (points.length < 2) {
-    return <p className="font-helvetica text-sm" style={{ color: MUTED }}>Pas encore assez de données.</p>;
+    return <p className="text-sm" style={{ color: BERRY.muted }}>Pas encore assez de données.</p>;
   }
   const W = 720;
   const H = 160;
@@ -277,21 +255,21 @@ export function TimeChart({ points }: { points: TimePoint[] }) {
     <div className="overflow-x-auto">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-40 w-full min-w-[560px]">
         <defs>
-          <linearGradient id="visArea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={AMBER} stopOpacity="0.35" />
-            <stop offset="100%" stopColor={AMBER} stopOpacity="0" />
+          <linearGradient id="berryArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={BERRY.primary} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={BERRY.primary} stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={area("visits")} fill="url(#visArea)" stroke="none" />
-        <path d={line("visits")} fill="none" stroke={AMBER} strokeWidth="2.5" strokeLinecap="round" />
-        <path d={line("submissions")} fill="none" stroke={ELECTRIC} strokeWidth="2.5" strokeLinecap="round" />
+        <path d={area("visits")} fill="url(#berryArea)" stroke="none" />
+        <path d={line("visits")} fill="none" stroke={BERRY.primary} strokeWidth="2.5" strokeLinecap="round" />
+        <path d={line("submissions")} fill="none" stroke={BERRY.secondaryDark} strokeWidth="2.5" strokeLinecap="round" />
       </svg>
-      <div className="mt-2 flex gap-4 font-helvetica text-xs" style={{ color: MUTED }}>
+      <div className="mt-2 flex gap-4 text-xs" style={{ color: BERRY.muted }}>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-4 rounded" style={{ background: AMBER }} /> Visites
+          <span className="inline-block h-2 w-4 rounded" style={{ background: BERRY.primary }} /> Visites
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-4 rounded" style={{ background: ELECTRIC }} /> Soumissions
+          <span className="inline-block h-2 w-4 rounded" style={{ background: BERRY.secondaryDark }} /> Soumissions
         </span>
       </div>
     </div>
@@ -299,57 +277,53 @@ export function TimeChart({ points }: { points: TimePoint[] }) {
 }
 
 export function LeadsTable({ leads }: { leads: LeadRow[] }) {
-  if (!leads.length) return <p className="font-helvetica text-sm" style={{ color: MUTED }}>Aucun lead complété.</p>;
+  if (!leads.length) return <p className="text-sm" style={{ color: BERRY.muted }}>Aucun lead complété.</p>;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[900px] border-collapse text-left font-helvetica text-sm">
+      <table className="w-full min-w-[900px] border-collapse text-left text-sm">
         <thead>
-          <tr className="border-b border-black/10 text-xs font-medium uppercase tracking-wide" style={{ color: MUTED }}>
-            <th className="px-3 py-2.5">Date</th>
-            <th className="px-3 py-2.5">Nom</th>
-            <th className="px-3 py-2.5">Contact</th>
-            <th className="px-3 py-2.5">Ville</th>
-            <th className="px-3 py-2.5">Activité</th>
-            <th className="px-3 py-2.5">CA → objectif</th>
-            <th className="px-3 py-2.5">Problématique</th>
-            <th className="px-3 py-2.5">Seul ?</th>
-            <th className="px-3 py-2.5">Digital</th>
+          <tr style={{ background: BERRY.bg }}>
+            {["Date", "Nom", "Contact", "Ville", "Activité", "CA → objectif", "Problématique", "Seul ?", "Digital"].map((h) => (
+              <th key={h} className="px-3 py-2.5 text-xs font-semibold first:rounded-l-lg last:rounded-r-lg" style={{ color: BERRY.muted }}>
+                {h}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {leads.map((l, i) => (
-            <tr key={i} className="border-b border-black/5 align-top transition-colors hover:bg-black/[0.02]">
-              <td className="whitespace-nowrap px-3 py-2.5 tabular-nums" style={{ color: MUTED }}>
+            <tr key={i} className="border-b align-top transition-colors hover:bg-[#f8fafc]" style={{ borderColor: BERRY.divider }}>
+              <td className="whitespace-nowrap px-3 py-3 tabular-nums" style={{ color: BERRY.muted }}>
                 {l.created_at.slice(0, 10)}
               </td>
-              <td className="px-3 py-2.5 font-medium" style={{ color: INK }}>{l.nom_prenom}</td>
-              <td className="px-3 py-2.5" style={{ color: MUTED }}>
+              <td className="px-3 py-3 font-medium" style={{ color: BERRY.ink }}>{l.nom_prenom}</td>
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>
                 <div>{l.email}</div>
                 <div className="tabular-nums">{l.telephone}</div>
               </td>
-              <td className="px-3 py-2.5" style={{ color: MUTED }}>{l.ville}</td>
-              <td className="px-3 py-2.5" style={{ color: MUTED }}>{l.activite}</td>
-              <td className="px-3 py-2.5" style={{ color: MUTED }}>
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>{l.ville}</td>
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>{l.activite}</td>
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>
                 {short(l.ca_actuel)} → {short(l.ca_objectif)}
               </td>
-              <td className="px-3 py-2.5" style={{ color: MUTED }}>{l.problematique}</td>
-              <td className="px-3 py-2.5">
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>{l.problematique}</td>
+              <td className="px-3 py-3">
                 {l.reglable_seul == null ? (
-                  <span style={{ color: MUTED }}>—</span>
+                  <span style={{ color: BERRY.muted }}>—</span>
                 ) : (
                   <span
                     className="rounded-full px-2 py-0.5 text-xs font-semibold"
                     style={
                       l.reglable_seul
-                        ? { background: "oklch(0.93 0.008 80)", color: MUTED }
-                        : { background: "oklch(0.58 0.21 252 / 0.12)", color: ELECTRIC }
+                        ? { background: BERRY.bg, color: BERRY.muted }
+                        : { background: BERRY.secondaryLight, color: BERRY.secondary800 }
                     }
                   >
                     {l.reglable_seul ? "Oui" : "Non"}
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2.5 tabular-nums font-semibold" style={{ color: AMBER_DIM }}>
+              <td className="px-3 py-3 font-semibold tabular-nums" style={{ color: BERRY.primaryDark }}>
                 {l.experience_digital == null ? "—" : `${l.experience_digital}★`}
               </td>
             </tr>
