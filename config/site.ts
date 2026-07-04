@@ -18,10 +18,10 @@ export const site = {
   totalSteps: 4,
 
   hero: {
-    badge: "Rendez-vous réservé",
-    title: "Tu as réservé ton audit. Mais rien n'est encore confirmé.",
+    badge: "Action requise",
+    title: "Attention : sans ces 4 étapes, ton rendez-vous sera annulé.",
     subtitle:
-      "Pour confirmer ton appel et accéder à tes ressources, complète les 4 étapes ci-dessous. Si tu ne les complètes pas, je serai obligé d'annuler notre rendez-vous.",
+      "Tu as réservé, mais RIEN n'est confirmé. Complète les 4 étapes ci-dessous dès maintenant. Si tu ne le fais pas, j'annule notre entretien — sans relance, sans exception.",
     ctaPrimary: "Commencer l'étape 1",
   },
 

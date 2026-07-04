@@ -29,13 +29,6 @@ export function Header() {
           {site.name}
           <span className="text-primary">.</span>
         </a>
-
-        <a
-          href="#video"
-          className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-primary hover:text-primary"
-        >
-          La présentation
-        </a>
       </div>
     </header>
   );
