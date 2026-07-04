@@ -8,6 +8,7 @@ import {
   BarList,
   FunnelChart,
   TimeChart,
+  RatingDonut,
   LeadsTable,
 } from "@/components/admin/parts";
 
@@ -18,12 +19,16 @@ function duration(sec: number | null): string {
   if (sec == null) return "—";
   const m = Math.floor(sec / 60);
   const s = sec % 60;
-  return `${m}m ${String(s).padStart(2, "0")}s`;
+  return m > 0 ? `${m}m ${String(s).padStart(2, "0")}s` : `${s}s`;
 }
+
+const TABS = ["Réponses", "Funnel", "Provenance", "Leads"] as const;
+type Tab = (typeof TABS)[number];
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("Réponses");
 
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -32,115 +37,141 @@ export default function AdminDashboard() {
       .catch(() => setError("Impossible de charger les stats."));
   }, []);
 
-  if (error) {
-    return <Centered>{error}</Centered>;
-  }
-  if (!stats) {
-    return <Centered>Chargement…</Centered>;
-  }
+  if (error) return <Centered>{error}</Centered>;
+  if (!stats) return <Centered>Chargement…</Centered>;
+
+  const t = stats.totals;
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl text-ink">Audit — statistiques</h1>
-          <p className="text-sm text-muted">Formulaire de qualification · funnel global</p>
+    <div className="min-h-[100svh] bg-[oklch(0.985_0.004_80)]">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
+        {/* En-tête */}
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="font-sans text-2xl font-semibold tracking-tight text-ink">
+              Formulaire de diagnostic
+            </h1>
+            <p className="font-sans text-sm text-muted">Statistiques du funnel</p>
+          </div>
+          <a
+            href="/api/admin/export"
+            className="rounded-lg border border-border bg-white px-4 py-2 font-sans text-sm font-medium text-ink transition-colors hover:border-ink"
+          >
+            Exporter en CSV
+          </a>
+        </header>
+
+        {!stats.configured && (
+          <div className="mb-6 rounded-xl border border-accent/40 bg-accent/5 p-4 font-sans text-sm text-ink">
+            Supabase n'est pas configuré : les statistiques sont vides.
+          </div>
+        )}
+
+        {/* Métriques */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <StatCard label="Visites" value={String(t.visits)} />
+          <StatCard label="Visiteurs uniques" value={String(t.uniqueVisitors)} />
+          <StatCard label="Ont commencé" value={String(t.started)} />
+          <StatCard label="Complétés" value={String(t.completed)} />
+          <StatCard label="Taux de complétion" value={pct(t.completionRate)} accent />
+          <StatCard label="Durée médiane" value={duration(t.medianDurationSec)} />
+          <StatCard
+            label="Leads chauds"
+            value={String(t.hotLeads)}
+            sub="objectif ≥ 20k & pas seul"
+            accent
+          />
         </div>
-        <a
-          href="/api/admin/export"
-          className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white"
-        >
-          Exporter les leads (CSV)
-        </a>
-      </header>
 
-      {!stats.configured && (
-        <div className="mb-6 rounded-xl border border-accent/40 bg-accent/5 p-4 text-sm text-ink">
-          Supabase n'est pas configuré (variables d'env manquantes) : les stats sont vides.
+        {/* Courbe temporelle */}
+        <div className="mb-6">
+          <SectionCard title="Visites & soumissions dans le temps">
+            <TimeChart points={stats.timeseries} />
+          </SectionCard>
         </div>
-      )}
 
-      {/* Totaux */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        <StatCard label="Visites" value={String(stats.totals.visits)} />
-        <StatCard label="Visiteurs uniques" value={String(stats.totals.uniqueVisitors)} />
-        <StatCard label="Ont commencé" value={String(stats.totals.started)} />
-        <StatCard label="Complétés" value={String(stats.totals.completed)} />
-        <StatCard
-          label="Taux de complétion"
-          value={pct(stats.totals.completionRate)}
-          accent
-        />
-        <StatCard label="Durée médiane" value={duration(stats.totals.medianDurationSec)} />
-        <StatCard
-          label="Leads chauds"
-          value={String(stats.totals.hotLeads)}
-          sub="objectif ≥ 20k & pas seul"
-          accent
-        />
-      </div>
-
-      <div className="grid gap-6">
-        <SectionCard title="Visites & soumissions dans le temps">
-          <TimeChart points={stats.timeseries} />
-        </SectionCard>
-
-        <SectionCard title="Funnel — où ils décrochent">
-          <FunnelChart funnel={stats.funnel} />
-        </SectionCard>
-
-        {/* Answer insights */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {stats.answerInsights.map((ai) => (
-            <SectionCard
-              key={ai.key}
-              title={ai.question}
-              right={
-                ai.average != null ? (
-                  <span className="text-sm font-medium text-electric">
-                    moy. {ai.average.toFixed(1)}★
-                  </span>
-                ) : undefined
-              }
+        {/* Onglets */}
+        <div className="mb-5 flex flex-wrap gap-2">
+          {TABS.map((tb) => (
+            <button
+              key={tb}
+              type="button"
+              onClick={() => setTab(tb)}
+              className={`rounded-full px-4 py-1.5 font-sans text-sm font-medium transition-colors ${
+                tab === tb
+                  ? "bg-ink text-white"
+                  : "border border-border bg-white text-muted hover:text-ink"
+              }`}
             >
-              <BarList buckets={ai.buckets} />
-            </SectionCard>
+              {tb}
+            </button>
           ))}
         </div>
 
-        {/* Provenance */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <SectionCard title="Sources de trafic">
-            <BarList buckets={stats.sources} />
-          </SectionCard>
-          <SectionCard title="Campagnes (UTM)">
-            <BarList buckets={stats.campaigns} />
-          </SectionCard>
-          <SectionCard title="Appareils">
-            <BarList buckets={stats.devices} />
-          </SectionCard>
-          <SectionCard title="Pays">
-            <BarList buckets={stats.countries} />
-          </SectionCard>
-          <SectionCard title="Navigateurs">
-            <BarList buckets={stats.browsers} />
-          </SectionCard>
-          <SectionCard title="Systèmes">
-            <BarList buckets={stats.os} />
-          </SectionCard>
-        </div>
+        {tab === "Réponses" && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {stats.answerInsights.map((ai) =>
+              ai.type === "stars" ? (
+                <SectionCard key={ai.key} title={ai.question}>
+                  <RatingDonut
+                    average={ai.average ?? 0}
+                    count={ai.buckets.reduce((s, b) => s + b.count, 0)}
+                  />
+                </SectionCard>
+              ) : (
+                <SectionCard key={ai.key} title={ai.question}>
+                  <BarList buckets={ai.buckets} />
+                </SectionCard>
+              )
+            )}
+          </div>
+        )}
 
-        <SectionCard title={`Leads complétés (${stats.leads.length})`}>
-          <LeadsTable leads={stats.leads} />
-        </SectionCard>
-      </div>
-    </main>
+        {tab === "Funnel" && (
+          <SectionCard
+            title="Où les visiteurs décrochent"
+            subtitle="Nombre de personnes ayant répondu à chaque question"
+          >
+            <FunnelChart funnel={stats.funnel} />
+          </SectionCard>
+        )}
+
+        {tab === "Provenance" && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SectionCard title="Sources de trafic">
+              <BarList buckets={stats.sources} />
+            </SectionCard>
+            <SectionCard title="Campagnes (UTM)">
+              <BarList buckets={stats.campaigns} />
+            </SectionCard>
+            <SectionCard title="Appareils">
+              <BarList buckets={stats.devices} />
+            </SectionCard>
+            <SectionCard title="Pays">
+              <BarList buckets={stats.countries} />
+            </SectionCard>
+            <SectionCard title="Navigateurs">
+              <BarList buckets={stats.browsers} />
+            </SectionCard>
+            <SectionCard title="Systèmes">
+              <BarList buckets={stats.os} />
+            </SectionCard>
+          </div>
+        )}
+
+        {tab === "Leads" && (
+          <SectionCard title={`Leads complétés (${stats.leads.length})`}>
+            <LeadsTable leads={stats.leads} />
+          </SectionCard>
+        )}
+      </main>
+    </div>
   );
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <main className="grid min-h-[100svh] place-items-center px-5 text-muted">
+    <main className="grid min-h-[100svh] place-items-center bg-[oklch(0.985_0.004_80)] px-5 font-sans text-muted">
       {children}
     </main>
   );

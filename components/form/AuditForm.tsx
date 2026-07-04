@@ -12,13 +12,17 @@ import { ProgressBar } from "./ProgressBar";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-/** Taille de police du titre selon la longueur de la question, pour rester compact. */
+/** Taille de police du titre selon la longueur de la question.
+ *  Calibré pour tenir sur UNE ligne dans la largeur du champ (~max-w-xl) sur
+ *  desktop, sans déborder ; sur mobile ça se réduit et wrap si vraiment long. */
 function questionSizeClass(q: string): string {
   const n = q.length;
-  if (n <= 32) return "text-4xl sm:text-6xl";
-  if (n <= 55) return "text-3xl sm:text-5xl";
-  if (n <= 85) return "text-[1.7rem] leading-tight sm:text-4xl";
-  return "text-2xl leading-snug sm:text-[2rem]";
+  if (n <= 20) return "text-3xl sm:text-5xl";
+  if (n <= 30) return "text-2xl sm:text-4xl";
+  if (n <= 40) return "text-2xl sm:text-3xl";
+  if (n <= 52) return "text-xl sm:text-[1.65rem]";
+  if (n <= 66) return "text-lg sm:text-[1.35rem]";
+  return "text-base sm:text-xl";
 }
 
 function validate(step: Step, value: unknown): string | null {
@@ -198,7 +202,7 @@ export function AuditForm() {
                   {String(index + 1).padStart(2, "0")}
                 </p>
                 <h1
-                  className={`font-helvetica font-bold text-balance text-white [text-shadow:0_2px_20px_oklch(0.3_0.12_240/0.6)] ${questionSizeClass(step.question)}`}
+                  className={`font-helvetica font-bold text-pretty text-white [text-shadow:0_2px_20px_oklch(0.3_0.12_240/0.6)] ${questionSizeClass(step.question)}`}
                 >
                   {step.question}
                 </h1>
