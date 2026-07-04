@@ -100,7 +100,7 @@ export const steps: readonly Step[] = [
   },
   {
     key: "ca_objectif",
-    question: "Quel est ton objectif de chiffre d'affaires mensuel ?",
+    question: "Jusqu'où veux-tu faire grandir ton activité ?",
     type: "select",
     required: true,
     options: [
