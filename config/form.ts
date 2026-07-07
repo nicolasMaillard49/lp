@@ -137,6 +137,19 @@ export const steps: readonly Step[] = [
     type: "stars",
     required: true,
   },
+  {
+    key: "ouvert_accompagnement",
+    question:
+      "Si, à la fin de notre appel, je vois que je suis en mesure de t'aider dans ton activité à atteindre les objectifs que tu t'es fixés de manière 100 % garantie, serais-tu ouvert à l'idée de te faire accompagner ?",
+    type: "yesno",
+    required: true,
+  },
+  {
+    key: "investir_financierement",
+    question: "Es-tu prêt à t'investir financièrement pour régler ce problème ?",
+    type: "yesno",
+    required: true,
+  },
 ] as const;
 
 export const TOTAL_STEPS = steps.length;

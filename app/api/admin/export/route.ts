@@ -16,6 +16,8 @@ const COLUMNS = [
   "problematique",
   "reglable_seul",
   "experience_digital",
+  "ouvert_accompagnement",
+  "investir_financierement",
   "utm_source",
   "utm_campaign",
   "device",

@@ -38,6 +38,8 @@ export interface LeadRow {
   problematique: string | null;
   reglable_seul: boolean | null;
   experience_digital: number | null;
+  ouvert_accompagnement: boolean | null;
+  investir_financierement: boolean | null;
   utm_campaign: string | null;
 }
 

@@ -31,6 +31,8 @@ interface Row {
   problematique: string | null;
   reglable_seul: boolean | null;
   experience_digital: number | null;
+  ouvert_accompagnement: boolean | null;
+  investir_financierement: boolean | null;
   referrer: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
@@ -137,7 +139,10 @@ export async function GET() {
         return { key: s.key, question: s.question, type: "stars", buckets, average };
       }
       if (s.type === "yesno") {
-        const vals = rows.map((r) => r.reglable_seul).filter((v) => v != null);
+        const ycol = s.key as keyof Row;
+        const vals = rows
+          .map((r) => r[ycol] as boolean | null)
+          .filter((v) => v != null);
         return {
           key: s.key,
           question: s.question,
@@ -209,6 +214,8 @@ export async function GET() {
     problematique: r.problematique,
     reglable_seul: r.reglable_seul,
     experience_digital: r.experience_digital,
+    ouvert_accompagnement: r.ouvert_accompagnement,
+    investir_financierement: r.investir_financierement,
     utm_campaign: r.utm_campaign,
   }));
 

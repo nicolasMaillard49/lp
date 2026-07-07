@@ -276,6 +276,23 @@ export function TimeChart({ points }: { points: TimePoint[] }) {
   );
 }
 
+/** Badge oui/non — "Non" mis en évidence (bleu) car souvent le signal fort. */
+function YesNoBadge({ value }: { value: boolean | null }) {
+  if (value == null) return <span style={{ color: BERRY.muted }}>—</span>;
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-xs font-semibold"
+      style={
+        value
+          ? { background: BERRY.bg, color: BERRY.muted }
+          : { background: BERRY.secondaryLight, color: BERRY.secondary800 }
+      }
+    >
+      {value ? "Oui" : "Non"}
+    </span>
+  );
+}
+
 export function LeadsTable({ leads }: { leads: LeadRow[] }) {
   if (!leads.length) return <p className="text-sm" style={{ color: BERRY.muted }}>Aucun lead complété.</p>;
   return (
@@ -283,7 +300,7 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
       <table className="w-full min-w-[900px] border-collapse text-left text-sm">
         <thead>
           <tr style={{ background: BERRY.bg }}>
-            {["Date", "Nom", "Contact", "Ville", "Activité", "CA → objectif", "Problématique", "Seul ?", "Digital"].map((h) => (
+            {["Date", "Nom", "Contact", "Ville", "Activité", "CA → objectif", "Problématique", "Seul ?", "Ouvert ?", "Investir ?", "Digital"].map((h) => (
               <th key={h} className="px-3 py-2.5 text-xs font-semibold first:rounded-l-lg last:rounded-r-lg" style={{ color: BERRY.muted }}>
                 {h}
               </th>
@@ -307,22 +324,9 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
                 {short(l.ca_actuel)} → {short(l.ca_objectif)}
               </td>
               <td className="px-3 py-3" style={{ color: BERRY.muted }}>{l.problematique}</td>
-              <td className="px-3 py-3">
-                {l.reglable_seul == null ? (
-                  <span style={{ color: BERRY.muted }}>—</span>
-                ) : (
-                  <span
-                    className="rounded-full px-2 py-0.5 text-xs font-semibold"
-                    style={
-                      l.reglable_seul
-                        ? { background: BERRY.bg, color: BERRY.muted }
-                        : { background: BERRY.secondaryLight, color: BERRY.secondary800 }
-                    }
-                  >
-                    {l.reglable_seul ? "Oui" : "Non"}
-                  </span>
-                )}
-              </td>
+              <td className="px-3 py-3"><YesNoBadge value={l.reglable_seul} /></td>
+              <td className="px-3 py-3"><YesNoBadge value={l.ouvert_accompagnement} /></td>
+              <td className="px-3 py-3"><YesNoBadge value={l.investir_financierement} /></td>
               <td className="px-3 py-3 font-semibold tabular-nums" style={{ color: BERRY.primaryDark }}>
                 {l.experience_digital == null ? "—" : `${l.experience_digital}★`}
               </td>
