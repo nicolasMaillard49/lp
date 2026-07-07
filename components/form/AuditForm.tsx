@@ -188,43 +188,37 @@ export function AuditForm() {
               exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction * -40 }}
               transition={{ duration: 0.35, ease: EASE }}
             >
-              <div className="relative isolate mb-8 py-4">
-                {/* Halo vert, même style doux que les halos orange de l'aurora */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -inset-x-12 -inset-y-16 -z-10 rounded-full blur-[90px]"
-                  style={{
-                    background:
-                      "radial-gradient(62% 60% at 40% 42%, oklch(0.72 0.19 150 / 0.62), oklch(0.72 0.19 150 / 0) 72%)",
-                  }}
-                />
-                <p className="mb-3 font-helvetica text-sm font-bold text-white/70">
-                  {String(index + 1).padStart(2, "0")}
-                </p>
-                <h1
-                  className={`font-helvetica font-bold text-pretty text-white [text-shadow:0_2px_20px_oklch(0.3_0.12_240/0.6)] ${questionSizeClass(step.question)}`}
-                >
-                  {step.question}
-                </h1>
-                {step.help && (
-                  <p className="mt-2 text-sm text-white/75 [text-shadow:0_1px_12px_oklch(0.3_0.1_240/0.5)]">
-                    {step.help}
+              {/* Card liquid glass (bleu électrique) : question + champs de réponse */}
+              <div className="glass-card relative overflow-hidden rounded-3xl p-6 sm:p-8">
+                <div className="relative isolate mb-6">
+                  <p className="mb-3 font-helvetica text-sm font-bold text-white/70">
+                    {String(index + 1).padStart(2, "0")}
                   </p>
+                  <h1
+                    className={`font-helvetica font-bold text-pretty text-white [text-shadow:0_2px_20px_oklch(0.3_0.12_240/0.6)] ${questionSizeClass(step.question)}`}
+                  >
+                    {step.question}
+                  </h1>
+                  {step.help && (
+                    <p className="mt-2 text-sm text-white/75 [text-shadow:0_1px_12px_oklch(0.3_0.1_240/0.5)]">
+                      {step.help}
+                    </p>
+                  )}
+                </div>
+
+                <StepField
+                  key={step.key}
+                  step={step}
+                  value={value}
+                  onChange={setValue}
+                  onCommit={(v?: unknown) => commit(v)}
+                  autoFocus
+                />
+
+                {error && (
+                  <p className="mt-3 text-sm font-medium text-accent">{error}</p>
                 )}
               </div>
-
-              <StepField
-                key={step.key}
-                step={step}
-                value={value}
-                onChange={setValue}
-                onCommit={(v?: unknown) => commit(v)}
-                autoFocus
-              />
-
-              {error && (
-                <p className="mt-3 text-sm font-medium text-accent">{error}</p>
-              )}
 
               {/* Navigation */}
               <div className="mt-8 flex items-center gap-3">
