@@ -90,7 +90,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-[1400px]">
+      <div className="flex">
         {/* ── Sidebar ── */}
         <aside
           className={`${menuOpen ? "block" : "hidden"} fixed inset-x-0 top-[57px] z-20 border-b p-4 lg:static lg:block lg:w-64 lg:shrink-0 lg:border-b-0 lg:p-5`}
