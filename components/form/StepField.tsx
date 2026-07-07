@@ -109,25 +109,23 @@ function TextField({
             ? "address-level2"
             : "off";
   return (
-    <div className="relative">
-      <input
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={autoFocus}
-        type={inputType}
-        inputMode={step.type === "tel" ? "tel" : undefined}
-        autoComplete={autoComplete}
-        value={value}
-        placeholder={step.placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            onCommit();
-          }
-        }}
-        className="h-16 w-full rounded-2xl border border-border bg-surface/80 px-5 text-xl text-ink shadow-sm outline-none backdrop-blur-sm transition-all duration-200 placeholder:text-muted/50 focus:border-electric focus:bg-bg focus:shadow-[0_0_0_4px_oklch(0.58_0.22_252/0.14)]"
-      />
-    </div>
+    <input
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus={autoFocus}
+      type={inputType}
+      inputMode={step.type === "tel" ? "tel" : undefined}
+      autoComplete={autoComplete}
+      value={value}
+      placeholder={step.placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          onCommit();
+        }
+      }}
+      className="h-16 w-full rounded-xl border border-border bg-surface px-5 text-xl text-ink outline-none transition-all duration-200 placeholder:text-muted/45 focus:border-primary focus:bg-bg focus:shadow-[0_0_0_3px_oklch(0.67_0.15_64/0.15)]"
+    />
   );
 }
 
@@ -146,7 +144,7 @@ function ChoiceGrid({
 }) {
   return (
     <div
-      className={`grid gap-3 ${columns === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}
+      className={`grid gap-2.5 ${columns === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}
     >
       {options.map((opt, i) => {
         const selected = value === opt;
@@ -154,19 +152,20 @@ function ChoiceGrid({
           <button
             key={opt}
             type="button"
+            aria-pressed={selected}
             onClick={() => onPick(opt)}
-            className={`group flex min-h-16 items-center gap-3 rounded-2xl border bg-surface/80 px-4 py-3.5 text-left shadow-sm backdrop-blur-sm transition-all duration-200 active:scale-[0.99] ${
+            className={`group flex min-h-14 items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors duration-150 ${
               selected
-                ? "border-electric bg-electric/5 shadow-[0_0_0_3px_oklch(0.58_0.22_252/0.16)]"
-                : "border-border hover:border-electric/50 hover:bg-electric/[0.03] hover:shadow-md"
+                ? "border-primary bg-primary/[0.06]"
+                : "border-border hover:border-ink/30"
             }`}
           >
             {letters && (
               <span
-                className={`grid size-8 shrink-0 place-items-center rounded-lg border text-sm font-bold transition-colors ${
+                className={`grid size-7 shrink-0 place-items-center rounded-md border text-xs font-semibold transition-colors ${
                   selected
-                    ? "border-electric bg-electric text-white"
-                    : "border-border bg-bg text-muted group-hover:border-electric/50 group-hover:text-electric"
+                    ? "border-primary bg-primary text-white"
+                    : "border-border text-muted group-hover:border-ink/30"
                 }`}
                 aria-hidden
               >
@@ -175,12 +174,10 @@ function ChoiceGrid({
             )}
             <span className="flex-1 text-base font-medium text-ink">{opt}</span>
             <span
-              className={`grid size-6 shrink-0 place-items-center rounded-full transition-all ${
-                selected ? "bg-electric text-white" : "text-transparent"
-              }`}
+              className={`shrink-0 text-primary transition-opacity ${selected ? "opacity-100" : "opacity-0"}`}
               aria-hidden
             >
-              <svg viewBox="0 0 16 16" fill="none" className="size-3.5">
+              <svg viewBox="0 0 16 16" fill="none" className="size-4">
                 <path
                   d="M3.5 8.2 6.5 11l6-6.6"
                   stroke="currentColor"
@@ -212,7 +209,7 @@ function Stars({
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
         <div
-          className="flex items-center gap-2"
+          className="flex items-center gap-1.5"
           onMouseLeave={() => setHover(null)}
         >
           {[1, 2, 3, 4, 5].map((n) => (
@@ -223,14 +220,12 @@ function Stars({
               onMouseEnter={() => setHover(n)}
               onFocus={() => setHover(n)}
               onClick={() => onPick(n)}
-              className="rounded-lg p-1 transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-electric"
+              className="rounded-md p-1 transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-primary"
             >
               <svg
                 viewBox="0 0 24 24"
-                className={`size-11 transition-colors duration-150 ${
-                  n <= active
-                    ? "text-electric drop-shadow-[0_2px_8px_oklch(0.58_0.22_252/0.4)]"
-                    : "text-border"
+                className={`size-10 transition-colors duration-150 ${
+                  n <= active ? "text-primary" : "text-border"
                 }`}
                 fill="currentColor"
               >
@@ -239,17 +234,17 @@ function Stars({
             </button>
           ))}
         </div>
-        <span className="min-w-20 font-helvetica text-lg font-bold text-ink">
+        <span className="min-w-20 text-base font-semibold text-ink">
           {STAR_LABELS[active] ?? ""}
         </span>
       </div>
       <button
         type="button"
         onClick={() => onPick(0)}
-        className={`w-fit rounded-full border px-4 py-2 text-sm font-medium transition-all active:scale-[0.98] ${
+        className={`w-fit rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
           value === 0
-            ? "border-electric bg-electric/5 text-ink shadow-[0_0_0_3px_oklch(0.58_0.22_252/0.14)]"
-            : "border-border text-muted hover:border-electric/50 hover:text-ink"
+            ? "border-primary bg-primary/[0.06] text-ink"
+            : "border-border text-muted hover:border-ink/30 hover:text-ink"
         }`}
       >
         Aucune expérience

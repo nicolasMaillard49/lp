@@ -6,23 +6,19 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { steps, form, TOTAL_STEPS, type Step } from "@/config/form";
 import { site } from "@/config/site";
 import { useAuditSession } from "@/hooks/useAuditSession";
-import { Aurora } from "@/components/Aurora";
 import { StepField } from "./StepField";
 import { ProgressBar } from "./ProgressBar";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-/** Taille de police du titre selon la longueur de la question.
- *  Calibré pour tenir sur UNE ligne dans la largeur du champ (~max-w-xl) sur
- *  desktop, sans déborder ; sur mobile ça se réduit et wrap si vraiment long. */
+/** Taille de la question (Fraunces) selon sa longueur, pour rester net à l'écran. */
 function questionSizeClass(q: string): string {
   const n = q.length;
-  if (n <= 20) return "text-3xl sm:text-5xl";
-  if (n <= 30) return "text-2xl sm:text-4xl";
-  if (n <= 40) return "text-2xl sm:text-3xl";
-  if (n <= 52) return "text-xl sm:text-[1.65rem]";
-  if (n <= 66) return "text-lg sm:text-[1.35rem]";
-  return "text-base sm:text-xl";
+  if (n <= 28) return "text-4xl sm:text-5xl";
+  if (n <= 48) return "text-3xl sm:text-4xl";
+  if (n <= 80) return "text-[1.75rem] leading-tight sm:text-[2rem]";
+  if (n <= 120) return "text-2xl leading-snug sm:text-[1.7rem]";
+  return "text-xl leading-snug sm:text-2xl";
 }
 
 function validate(step: Step, value: unknown): string | null {
@@ -53,6 +49,7 @@ export function AuditForm() {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [direction, setDirection] = useState(1);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
 
@@ -66,6 +63,7 @@ export function AuditForm() {
 
   const commit = useCallback(
     (override?: unknown) => {
+      if (submitting) return;
       const value = override !== undefined ? override : answers[step.key];
       const nextAnswers =
         override !== undefined ? { ...answers, [step.key]: override } : answers;
@@ -78,6 +76,7 @@ export function AuditForm() {
       setError(null);
 
       if (isLast) {
+        setSubmitting(true);
         submit(nextAnswers);
         setDone(true);
         window.setTimeout(
@@ -91,7 +90,7 @@ export function AuditForm() {
       setDirection(1);
       setIndex((i) => i + 1);
     },
-    [answers, step, isLast, index, submit, progress, router, reduce]
+    [answers, step, isLast, index, submitting, submit, progress, router, reduce]
   );
 
   const back = useCallback(() => {
@@ -109,124 +108,96 @@ export function AuditForm() {
     step.type === "text" || step.type === "email" || step.type === "tel";
 
   return (
-    <main className="relative flex min-h-[100svh] flex-col overflow-hidden px-5 py-6 sm:px-8">
-      <Aurora />
-      <div
-        aria-hidden
-        className="glow-honey pointer-events-none absolute left-1/2 top-0 -z-10 h-[90vmin] w-[90vmin] -translate-x-1/2"
-      />
-
-      {/* En-tête : logo + progression */}
-      <header className="mx-auto w-full max-w-xl">
+    <main className="mx-auto flex min-h-[100svh] w-full max-w-2xl flex-col px-5 py-8 sm:px-6">
+      {/* En-tête : marque + progression */}
+      <header>
         <div className="mb-6 flex items-center justify-between">
-          <span className="font-display text-lg font-semibold tracking-tight text-ink">
+          <span className="font-helvetica text-lg font-bold tracking-tight text-ink">
             {site.name}
             <span className="text-primary">.</span>
           </span>
-          <span className="text-xs font-medium uppercase tracking-wide text-muted">
+          <span className="hidden text-xs font-medium uppercase tracking-wide text-muted sm:inline">
             {form.title}
           </span>
         </div>
+
         {!done && <ProgressBar current={index + 1} total={TOTAL_STEPS} />}
 
         {!done && showDisclaimer && (
-          <div className="relative mt-4 flex items-start gap-3 rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 pr-10">
-            <svg
-              viewBox="0 0 20 20"
-              className="mt-0.5 size-5 shrink-0 text-accent"
-              fill="none"
-              aria-hidden
-            >
-              <path
-                d="M10 2.5 18.5 17H1.5L10 2.5Z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M10 8v4"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-              <circle cx="10" cy="14.5" r="0.4" fill="currentColor" stroke="currentColor" strokeWidth="0.8" />
+          <div className="mt-4 flex items-start gap-2.5 border-t border-border pt-4 text-xs leading-relaxed text-muted">
+            <svg viewBox="0 0 20 20" className="mt-px size-4 shrink-0 text-accent" fill="none" aria-hidden>
+              <path d="M10 2.5 18.5 17H1.5L10 2.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+              <path d="M10 8v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="10" cy="14.5" r="0.5" fill="currentColor" />
             </svg>
-            <p className="text-xs leading-relaxed text-ink sm:text-sm">
-              <span className="font-bold text-accent">{form.disclaimerTitle}</span>{" "}
+            <p className="min-w-0 flex-1">
+              <span className="font-semibold text-ink">{form.disclaimerTitle}</span>{" "}
               {form.disclaimer}
             </p>
             <button
               type="button"
               onClick={() => setShowDisclaimer(false)}
-              aria-label="Fermer l'avertissement"
-              className="absolute right-2 top-2 grid size-7 place-items-center rounded-full text-accent/70 transition-colors hover:bg-accent/10 hover:text-accent"
+              aria-label="Masquer l'avertissement"
+              className="-mt-1 -mr-1 grid size-6 shrink-0 place-items-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink"
             >
-              <svg viewBox="0 0 16 16" fill="none" className="size-4">
-                <path
-                  d="M4 4l8 8M12 4l-8 8"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
+              <svg viewBox="0 0 16 16" fill="none" className="size-3.5">
+                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </button>
           </div>
         )}
       </header>
 
-      {/* Corps */}
-      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-start pt-10 pb-8 sm:pt-16">
+      {/* Corps : une question par écran */}
+      <div className="flex flex-1 flex-col justify-center py-12">
         {done ? (
-          <DoneScreen />
+          <DoneScreen reduce={!!reduce} />
         ) : (
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={index}
               custom={direction}
-              initial={reduce ? false : { opacity: 0, x: direction * 40 }}
+              initial={reduce ? false : { opacity: 0, x: direction * 24 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction * -40 }}
-              transition={{ duration: 0.35, ease: EASE }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, x: direction * -24 }}
+              transition={{ duration: 0.3, ease: EASE }}
             >
-              {/* Card liquid glass (bleu électrique) : question + champs de réponse */}
-              <div className="glass-card relative overflow-hidden rounded-3xl p-6 sm:p-8">
-                <div className="relative isolate mb-6">
-                  <p className="mb-3 font-helvetica text-sm font-bold text-white/70">
-                    {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <h1
-                    className={`font-helvetica font-bold text-pretty text-white [text-shadow:0_2px_20px_oklch(0.3_0.12_240/0.6)] ${questionSizeClass(step.question)}`}
-                  >
-                    {step.question}
-                  </h1>
-                  {step.help && (
-                    <p className="mt-2 text-sm text-white/75 [text-shadow:0_1px_12px_oklch(0.3_0.1_240/0.5)]">
-                      {step.help}
-                    </p>
-                  )}
-                </div>
-
-                <StepField
-                  key={step.key}
-                  step={step}
-                  value={value}
-                  onChange={setValue}
-                  onCommit={(v?: unknown) => commit(v)}
-                  autoFocus
-                />
-
-                {error && (
-                  <p className="mt-3 text-sm font-medium text-accent">{error}</p>
+              <div className="mb-8">
+                <h1
+                  className={`font-helvetica font-bold tracking-tight text-balance text-ink ${questionSizeClass(step.question)}`}
+                >
+                  {step.question}
+                </h1>
+                {step.help && (
+                  <p className="mt-3 max-w-prose text-sm text-ink/70">{step.help}</p>
                 )}
               </div>
 
+              <StepField
+                key={step.key}
+                step={step}
+                value={value}
+                onChange={setValue}
+                onCommit={(v?: unknown) => commit(v)}
+                autoFocus
+              />
+
+              {error && (
+                <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-accent" role="alert">
+                  <svg viewBox="0 0 16 16" className="size-4 shrink-0" fill="currentColor" aria-hidden>
+                    <path d="M8 1.5 15 14H1L8 1.5Zm0 4.5v3.2M8 11.2v.1" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+                  </svg>
+                  {error}
+                </p>
+              )}
+
               {/* Navigation */}
-              <div className="mt-8 flex items-center gap-3">
+              <div className="mt-10 flex items-center gap-5">
                 {index > 0 && (
                   <button
                     type="button"
                     onClick={back}
-                    className="rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-muted transition-colors hover:border-ink hover:text-ink"
+                    className="text-sm font-medium text-muted transition-colors hover:text-ink"
                   >
                     Précédent
                   </button>
@@ -235,58 +206,51 @@ export function AuditForm() {
                   <button
                     type="button"
                     onClick={() => commit()}
-                    className="btn-shine inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-[0_8px_30px_-8px_oklch(0.67_0.15_64/0.6)]"
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-[oklch(0.61_0.15_64)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
                   >
                     {isLast ? form.submitLabel : isEmptyOptional ? "Passer" : "Continuer"}
+                    <svg viewBox="0 0 16 16" className="size-4" fill="none" aria-hidden>
+                      <path d="M3 8h9M8.5 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </button>
                 )}
+                {!showNextButton && (
+                  <p className="text-xs text-muted">
+                    Sélectionne une réponse pour continuer.
+                  </p>
+                )}
               </div>
-              {!showNextButton && (
-                <p className="mt-4 text-xs text-muted">
-                  Sélectionne une réponse pour continuer.
-                </p>
-              )}
             </motion.div>
           </AnimatePresence>
         )}
       </div>
 
-      {/* Logo NMF (favicon) en bas au centre */}
-      <footer className="mx-auto mt-4 flex w-full justify-center pb-2">
+      <footer className="flex justify-center pt-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-nmf.png"
-          alt="NMF Agence"
-          className="h-10 w-auto opacity-85"
-        />
+        <img src="/logo-nmf.png" alt="NMF Agence" className="h-8 w-auto opacity-60" />
       </footer>
     </main>
   );
 }
 
-function DoneScreen() {
+function DoneScreen({ reduce }: { reduce: boolean }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={reduce ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: EASE }}
+      transition={{ duration: 0.4, ease: EASE }}
       className="text-center"
     >
-      <div className="mx-auto mb-6 grid size-16 place-items-center rounded-full bg-electric/10">
-        <svg viewBox="0 0 24 24" fill="none" className="size-8 text-electric">
-          <path
-            d="M5 12.5 10 17l9-10"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+      <div className="mx-auto mb-6 grid size-14 place-items-center rounded-full bg-primary/10">
+        <svg viewBox="0 0 24 24" fill="none" className="size-7 text-primary">
+          <path d="M5 12.5 10 17l9-10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
-      <h1 className="mb-2 font-display text-2xl text-ink sm:text-3xl">
+      <h1 className="mb-2 font-helvetica text-2xl font-bold tracking-tight text-ink sm:text-3xl">
         Merci, c'est enregistré.
       </h1>
-      <p className="text-muted">On prépare ton audit… redirection en cours.</p>
+      <p className="text-muted">On prépare ton audit — redirection en cours.</p>
     </motion.div>
   );
 }
