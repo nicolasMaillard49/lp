@@ -9,10 +9,12 @@ import { Resource } from "@/components/Resource";
 import { Prepare } from "@/components/Prepare";
 import { Proof } from "@/components/Proof";
 import { Footer } from "@/components/Footer";
+import { TrackLead } from "@/components/TrackLead";
 
 export default function Bienvenue() {
   return (
     <>
+      <TrackLead />
       <Intro />
       <ScrollProgress />
       <Header />
