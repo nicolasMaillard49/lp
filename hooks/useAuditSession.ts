@@ -30,9 +30,9 @@ function readAttribution() {
 
 type Payload = Record<string, unknown>;
 
-function send(payload: Payload) {
+function send(endpoint: string, payload: Payload) {
   try {
-    fetch("/api/audit", {
+    fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
@@ -44,7 +44,7 @@ function send(payload: Payload) {
 }
 
 /** Gère l'identité de session et l'envoi des events de tracking. */
-export function useAuditSession() {
+export function useAuditSession(endpoint: string = "/api/audit") {
   const sessionId = useRef<string>("");
   const visitorId = useRef<string>("");
   const startedAt = useRef<number>(0);
@@ -63,36 +63,42 @@ export function useAuditSession() {
     } catch {
       visitorId.current = uuid();
     }
-    send({
+    send(endpoint, {
       session_id: sessionId.current,
       visitor_id: visitorId.current,
       event: "visit",
       attribution: readAttribution(),
     });
-  }, []);
+  }, [endpoint]);
 
-  const progress = useCallback((lastStep: number, answers: Payload) => {
-    if (!sessionId.current) return;
-    maxStep.current = Math.max(maxStep.current, lastStep);
-    send({
-      session_id: sessionId.current,
-      visitor_id: visitorId.current,
-      event: "progress",
-      last_step: maxStep.current,
-      answers,
-    });
-  }, []);
+  const progress = useCallback(
+    (lastStep: number, answers: Payload) => {
+      if (!sessionId.current) return;
+      maxStep.current = Math.max(maxStep.current, lastStep);
+      send(endpoint, {
+        session_id: sessionId.current,
+        visitor_id: visitorId.current,
+        event: "progress",
+        last_step: maxStep.current,
+        answers,
+      });
+    },
+    [endpoint]
+  );
 
-  const submit = useCallback((answers: Payload) => {
-    if (!sessionId.current) return;
-    send({
-      session_id: sessionId.current,
-      visitor_id: visitorId.current,
-      event: "submit",
-      answers,
-      duration_seconds: Math.round((Date.now() - startedAt.current) / 1000),
-    });
-  }, []);
+  const submit = useCallback(
+    (answers: Payload) => {
+      if (!sessionId.current) return;
+      send(endpoint, {
+        session_id: sessionId.current,
+        visitor_id: visitorId.current,
+        event: "submit",
+        answers,
+        duration_seconds: Math.round((Date.now() - startedAt.current) / 1000),
+      });
+    },
+    [endpoint]
+  );
 
   return { progress, submit };
 }

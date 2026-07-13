@@ -1,4 +1,4 @@
-import type { Bucket, FunnelStep, TimePoint, LeadRow } from "@/lib/statsTypes";
+import type { Bucket, FunnelStep, TimePoint, LeadRow, R2LeadRow } from "@/lib/statsTypes";
 
 // ── Palette Berry (Free MUI admin template) ──
 export const BERRY = {
@@ -216,8 +216,8 @@ export function FunnelChart({ funnel }: { funnel: FunnelStep[] }) {
   );
 }
 
-export function RatingDonut({ average, count }: { average: number; count: number }) {
-  const pct = Math.max(0, Math.min(100, (average / 5) * 100));
+export function RatingDonut({ average, count, max = 5 }: { average: number; count: number; max?: number }) {
+  const pct = Math.max(0, Math.min(100, (average / max) * 100));
   return (
     <div className="flex flex-col items-center gap-3 py-2">
       <div
@@ -227,7 +227,7 @@ export function RatingDonut({ average, count }: { average: number; count: number
         <div className="grid size-28 place-items-center rounded-full text-center" style={{ background: BERRY.paper }}>
           <div>
             <div className="text-3xl font-bold" style={{ color: BERRY.ink }}>{average.toFixed(1)}</div>
-            <div className="text-xs" style={{ color: BERRY.muted }}>/ 5 moyenne</div>
+            <div className="text-xs" style={{ color: BERRY.muted }}>/ {max} moyenne</div>
           </div>
         </div>
       </div>
@@ -341,4 +341,58 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
 function short(v: string | null): string {
   if (!v) return "—";
   return v.replace(/\s*€\s*\/\s*mois/, "").replace(/\s*€/, "").trim();
+}
+
+/** Table des réponses au questionnaire R2. */
+export function R2Table({ leads }: { leads: R2LeadRow[] }) {
+  if (!leads.length) return <p className="text-sm" style={{ color: BERRY.muted }}>Aucune réponse complétée.</p>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[900px] border-collapse text-left text-sm">
+        <thead>
+          <tr style={{ background: BERRY.bg }}>
+            {["Date", "Nom", "Note R1", "Objectif", "Budget", "Infos pour décider", "Prêt à décider ?", "Si non, pourquoi", "Campagne"].map((h) => (
+              <th key={h} className="px-3 py-2.5 text-xs font-semibold first:rounded-l-lg last:rounded-r-lg" style={{ color: BERRY.muted }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {leads.map((l, i) => (
+            <tr key={i} className="border-b align-top transition-colors hover:bg-[#f8fafc]" style={{ borderColor: BERRY.divider }}>
+              <td className="whitespace-nowrap px-3 py-3 tabular-nums" style={{ color: BERRY.muted }}>
+                {l.created_at.slice(0, 10)}
+              </td>
+              <td className="px-3 py-3 font-medium" style={{ color: BERRY.ink }}>{l.nom_prenom}</td>
+              <td className="px-3 py-3 font-semibold tabular-nums" style={{ color: BERRY.primaryDark }}>
+                {l.note_r1 == null ? "—" : `${l.note_r1}/10`}
+              </td>
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>{short(l.objectif)}</td>
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>{short(l.budget_investissement)}</td>
+              <td className="max-w-72 px-3 py-3" style={{ color: BERRY.muted }}>{l.infos_decision ?? "—"}</td>
+              <td className="px-3 py-3">
+                {l.pret_a_decider == null ? (
+                  <span style={{ color: BERRY.muted }}>—</span>
+                ) : (
+                  <span
+                    className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                    style={
+                      l.pret_a_decider
+                        ? { background: "#e8f5e9", color: "#1b5e20" }
+                        : { background: "#ffebee", color: "#c62828" }
+                    }
+                  >
+                    {l.pret_a_decider ? "Oui" : "Non"}
+                  </span>
+                )}
+              </td>
+              <td className="max-w-72 px-3 py-3" style={{ color: BERRY.muted }}>{l.raison_hesitation ?? "—"}</td>
+              <td className="px-3 py-3" style={{ color: BERRY.muted }}>{l.utm_campaign ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>NMF Agence — 7 questions avant de dire oui</title>
+<style>
+  :root { --bg:#fff; --surface:#faf6ef; --surface2:#f3ece0; --ink:#241f1a; --muted:#6f655b; --primary:#c0801f; --primary-bright:#edb04a; --accent:#9b4a2e; --border:#e7ddcd; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  @page { size:A4; margin:0; }
+  html, body { background:var(--bg); color:var(--ink); font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { position:relative; width:210mm; height:297mm; padding:20mm 20mm 22mm; overflow:hidden; page-break-after:always; display:flex; flex-direction:column; }
+  .page:last-child { page-break-after:auto; }
+  .eyebrow { font-size:9.5pt; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--primary); }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:700; font-size:13pt; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--primary); }
+  .badge { display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); padding:8px 16px; border-radius:999px; font-size:10pt; font-weight:600; }
+  .badge .star { color:var(--primary); }
+  .page-num { position:absolute; bottom:12mm; right:20mm; font-size:9pt; color:var(--muted); font-weight:600; }
+  .footline { position:absolute; bottom:12mm; left:20mm; font-size:9pt; color:var(--muted); font-weight:600; }
+  .glow { position:absolute; border-radius:50%; filter:blur(70px); z-index:0; }
+  .content { position:relative; z-index:1; flex:1; display:flex; flex-direction:column; }
+  h1.cover-title { font-size:34pt; line-height:1.08; font-weight:700; letter-spacing:-0.015em; }
+  .lead { font-size:11.5pt; line-height:1.55; margin-top:12px; max-width:155mm; }
+
+  .q { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); }
+  .q:last-child { border-bottom:none; }
+  .q .no { flex-shrink:0; width:30px; height:30px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12pt; }
+  .q b { font-size:11.5pt; line-height:1.35; display:block; }
+  .q span { display:block; font-size:9.8pt; color:var(--muted); margin-top:3px; line-height:1.45; }
+  .q .case { flex-shrink:0; width:16px; height:16px; border:2px solid var(--border); border-radius:4px; margin-top:2px; }
+
+  .encart { margin-top:auto; margin-bottom:6mm; background:var(--ink); color:#fff; border-radius:16px; padding:20px 24px; }
+  .encart .titre { font-size:9pt; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--primary-bright); }
+  .encart p { font-size:11pt; line-height:1.55; margin-top:8px; color:rgba(255,255,255,.92); }
+  .note { font-size:9pt; color:var(--muted); line-height:1.45; margin-top:12px; font-style:italic; }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="glow" style="width:150mm;height:150mm;background:rgba(237,176,74,.42);top:-40mm;right:-40mm;"></div>
+  <div class="glow" style="width:110mm;height:110mm;background:rgba(192,128,31,.16);bottom:-30mm;left:-30mm;"></div>
+  <div class="content">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="brand">NMF Agence<span class="dot"></span></div>
+      <div class="badge"><span class="star">★</span> La checklist décision</div>
+    </div>
+    <div style="margin-top:12mm;">
+      <div class="eyebrow">À remplir avant notre rendez-vous</div>
+      <h1 class="cover-title">7 questions à te poser<br>avant de dire oui.</h1>
+      <p class="lead" style="color:var(--muted);">Une bonne décision se prépare. Coche chaque question à laquelle tu sais répondre — et note celles qui restent floues : ce sont exactement celles qu'on traitera en premier au rendez-vous.</p>
+    </div>
+
+    <div style="margin-top:10mm;">
+      <div class="q"><div class="no">1</div><div style="flex:1;"><b>Qu'est-ce que ça me coûte de rester comme aujourd'hui ?</b><span>Chantiers irréguliers, prospection le soir, dépendance au bouche-à-oreille — chiffre-le, même grossièrement.</span></div><div class="case"></div></div>
+      <div class="q"><div class="no">2</div><div style="flex:1;"><b>Mon objectif des 6 prochains mois est-il clair ?</b><span>Plus de chantiers ? De plus gros chantiers ? Moins de creux ? Un objectif flou donne une décision floue.</span></div><div class="case"></div></div>
+      <div class="q"><div class="no">3</div><div style="flex:1;"><b>Est-ce que j'ai compris ce que contient l'accompagnement ?</b><span>Durée, phases, outils, résultats attendus — tout est sur la page et dans la vidéo. Si un point reste flou, note-le.</span></div><div class="case"></div></div>
+      <div class="q"><div class="no">4</div><div style="flex:1;"><b>Quel budget mensuel je peux engager sereinement ?</b><span>Pub + accompagnement. Le mémo ROI t'aide à le mettre en face de ce qu'un chantier te rapporte.</span></div><div class="case"></div></div>
+      <div class="q"><div class="no">5</div><div style="flex:1;"><b>Qui participe à la décision ?</b><span>Associé, conjoint ? Alors il faut qu'il ou elle voie cette page et soit présent(e) au rendez-vous — ça évite le « je dois en parler ».</span></div><div class="case"></div></div>
+      <div class="q"><div class="no">6</div><div style="flex:1;"><b>Qu'est-ce qui me ferait dire non ?</b><span>Écris-le noir sur blanc. Une objection formulée se traite ; une objection vague revient toujours.</span></div><div class="case"></div></div>
+      <div class="q"><div class="no">7</div><div style="flex:1;"><b>Si tout ce que j'ai vu est vrai, suis-je prêt à me lancer ?</b><span>Si la réponse est non, qu'est-ce qui manque ? C'est LA chose à me dire au début du rendez-vous.</span></div><div class="case"></div></div>
+    </div>
+
+    <div class="encart">
+      <div class="titre">Pourquoi ce document</div>
+      <p>Notre prochain rendez-vous se termine par une décision — oui ou non, les deux se respectent. Ces 7 questions font le tri entre un vrai blocage et une simple zone d'ombre. Arrive avec tes réponses : on gagnera trente minutes.</p>
+    </div>
+  </div>
+  <div class="footline">7 questions avant de dire oui — NMF Agence</div>
+  <div class="page-num">01 / 01</div>
+</section>
+
+</body>
+</html>

@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { steps, form, TOTAL_STEPS, type Step } from "@/config/form";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
+import { stepsR2, formR2, TOTAL_STEPS_R2 } from "@/config/form-r2";
+import type { Step } from "@/config/form";
 import { site } from "@/config/site";
 import { useAuditSession } from "@/hooks/useAuditSession";
+import { fbTrackCustom } from "@/lib/fpixel";
 import { StepField } from "./StepField";
 import { ProgressBar } from "./ProgressBar";
 
@@ -22,7 +23,7 @@ function questionSizeClass(q: string): string {
 }
 
 function validate(step: Step, value: unknown): string | null {
-  if (step.type === "stars") {
+  if (step.type === "scale") {
     return typeof value === "number" ? null : "Choisis une note.";
   }
   if (step.type === "yesno") {
@@ -31,19 +32,13 @@ function validate(step: Step, value: unknown): string | null {
   const str = value == null ? "" : String(value).trim();
   if (!step.required) return null;
   if (!str) return "Ce champ est requis.";
-  if (step.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str)) {
-    return "Adresse email invalide.";
-  }
-  if (step.type === "tel" && str.replace(/\D/g, "").length < 10) {
-    return "Numéro de téléphone invalide.";
-  }
   return null;
 }
 
-export function AuditForm() {
-  const router = useRouter();
+/** Questionnaire de préparation du R2 — même mécanique que le formulaire R1. */
+export function R2Form() {
   const reduce = useReducedMotion();
-  const { progress, submit } = useAuditSession();
+  const { progress, submit } = useAuditSession("/api/r2");
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -51,15 +46,17 @@ export function AuditForm() {
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [direction, setDirection] = useState(1);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
 
-  const step = steps[index];
-  const isLast = index === TOTAL_STEPS - 1;
+  const step = stepsR2[index];
+  const isLast = index === TOTAL_STEPS_R2 - 1;
 
-  const setValue = useCallback((v: unknown) => {
-    setError(null);
-    setAnswers((prev) => ({ ...prev, [step.key]: v }));
-  }, [step.key]);
+  const setValue = useCallback(
+    (v: unknown) => {
+      setError(null);
+      setAnswers((prev) => ({ ...prev, [step.key]: v }));
+    },
+    [step.key]
+  );
 
   const commit = useCallback(
     (override?: unknown) => {
@@ -78,11 +75,8 @@ export function AuditForm() {
       if (isLast) {
         setSubmitting(true);
         submit(nextAnswers);
+        fbTrackCustom("QuestionnaireR2");
         setDone(true);
-        window.setTimeout(
-          () => router.push(form.redirectTo),
-          reduce ? 300 : 1300
-        );
         return;
       }
 
@@ -90,7 +84,7 @@ export function AuditForm() {
       setDirection(1);
       setIndex((i) => i + 1);
     },
-    [answers, step, isLast, index, submitting, submit, progress, router, reduce]
+    [answers, step, isLast, index, submitting, submit, progress]
   );
 
   const back = useCallback(() => {
@@ -102,10 +96,13 @@ export function AuditForm() {
   const value = answers[step.key];
   const isEmptyOptional =
     !step.required &&
-    (step.type === "text" || step.type === "email" || step.type === "tel") &&
+    (step.type === "text" || step.type === "textarea") &&
     (value == null || String(value).trim() === "");
   const showNextButton =
-    step.type === "text" || step.type === "email" || step.type === "tel";
+    step.type === "text" ||
+    step.type === "email" ||
+    step.type === "tel" ||
+    step.type === "textarea";
 
   return (
     <main className="mx-auto flex min-h-[100svh] w-full max-w-2xl flex-col px-5 py-8 sm:px-6">
@@ -117,35 +114,11 @@ export function AuditForm() {
             <span className="text-primary">.</span>
           </span>
           <span className="hidden text-xs font-medium uppercase tracking-wide text-muted sm:inline">
-            {form.title}
+            {formR2.title}
           </span>
         </div>
 
-        {!done && <ProgressBar current={index + 1} total={TOTAL_STEPS} />}
-
-        {!done && showDisclaimer && (
-          <div className="mt-4 flex items-start gap-2.5 border-t border-border pt-4 text-xs leading-relaxed text-muted">
-            <svg viewBox="0 0 20 20" className="mt-px size-4 shrink-0 text-accent" fill="none" aria-hidden>
-              <path d="M10 2.5 18.5 17H1.5L10 2.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-              <path d="M10 8v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              <circle cx="10" cy="14.5" r="0.5" fill="currentColor" />
-            </svg>
-            <p className="min-w-0 flex-1">
-              <span className="font-semibold text-ink">{form.disclaimerTitle}</span>{" "}
-              {form.disclaimer}
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowDisclaimer(false)}
-              aria-label="Masquer l'avertissement"
-              className="-mt-1 -mr-1 grid size-6 shrink-0 place-items-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink"
-            >
-              <svg viewBox="0 0 16 16" fill="none" className="size-3.5">
-                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        )}
+        {!done && <ProgressBar current={index + 1} total={TOTAL_STEPS_R2} />}
       </header>
 
       {/* Corps : une question par écran */}
@@ -154,7 +127,7 @@ export function AuditForm() {
           <DoneScreen reduce={!!reduce} />
         ) : (
           <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
+            <m.div
               key={index}
               custom={direction}
               initial={reduce ? false : { opacity: 0, x: direction * 24 }}
@@ -209,7 +182,7 @@ export function AuditForm() {
                     disabled={submitting}
                     className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-[oklch(0.61_0.15_64)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
                   >
-                    {isLast ? form.submitLabel : isEmptyOptional ? "Passer" : "Continuer"}
+                    {isLast ? formR2.submitLabel : isEmptyOptional ? "Passer" : "Continuer"}
                     <svg viewBox="0 0 16 16" className="size-4" fill="none" aria-hidden>
                       <path d="M3 8h9M8.5 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -221,7 +194,7 @@ export function AuditForm() {
                   </p>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </AnimatePresence>
         )}
       </div>
@@ -236,7 +209,7 @@ export function AuditForm() {
 
 function DoneScreen({ reduce }: { reduce: boolean }) {
   return (
-    <motion.div
+    <m.div
       initial={reduce ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: EASE }}
@@ -248,9 +221,21 @@ function DoneScreen({ reduce }: { reduce: boolean }) {
         </svg>
       </div>
       <h1 className="mb-2 font-helvetica text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-        Merci, c'est enregistré.
+        C'est noté, merci.
       </h1>
-      <p className="text-muted">On prépare ton audit — redirection en cours.</p>
-    </motion.div>
+      <p className="mx-auto max-w-md text-muted">
+        Tout est prêt pour notre rendez-vous. Si une question te vient d'ici
+        là, note-la — on la traitera en premier.
+      </p>
+      <a
+        href="/preparation"
+        className="mt-8 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-6 py-3 text-sm font-semibold text-ink transition-colors hover:border-primary"
+      >
+        <svg viewBox="0 0 16 16" className="size-4" fill="none" aria-hidden>
+          <path d="M13 8H4M7.5 4l-4 4 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Revenir à la présentation
+      </a>
+    </m.div>
   );
 }

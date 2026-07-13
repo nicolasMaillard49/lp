@@ -20,3 +20,13 @@ export function fbTrack(event: string, params?: Record<string, unknown>) {
     window.fbq("track", event, params);
   }
 }
+
+/**
+ * Déclenche un événement personnalisé Meta (ex. "PrepaR2").
+ * No-op côté serveur ou si le pixel n'est pas encore chargé.
+ */
+export function fbTrackCustom(event: string, params?: Record<string, unknown>) {
+  if (typeof window !== "undefined" && typeof window.fbq === "function") {
+    window.fbq("trackCustom", event, params);
+  }
+}

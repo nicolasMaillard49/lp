@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import {
-  motion,
+  m,
   useMotionValue,
   useSpring,
   useReducedMotion,
@@ -38,13 +38,13 @@ export function Magnetic({ children, className, strength = 0.35 }: MagneticProps
   }
 
   return (
-    <motion.div
+    <m.div
       style={{ x: sx, y: sy }}
       onMouseMove={handleMove}
       onMouseLeave={reset}
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

@@ -53,7 +53,7 @@ export default function AdminLogin() {
       >
         <div className="mb-5 flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-nmf.png" alt="NMF Agence" className="size-9 rounded-md" />
+          <img src="/logo-nmf-96.png" alt="NMF Agence" className="size-9 rounded-md" />
           <div>
             <h1 className="text-lg font-bold leading-none" style={{ color: INK, fontFamily: "inherit" }}>Diagnostic</h1>
             <p className="mt-0.5 text-xs" style={{ color: MUTED }}>Dashboard NMF Agence</p>

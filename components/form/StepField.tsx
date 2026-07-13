@@ -29,6 +29,15 @@ export function StepField({ step, value, onChange, onCommit, autoFocus }: Props)
           autoFocus={autoFocus}
         />
       );
+    case "textarea":
+      return (
+        <TextArea
+          step={step}
+          value={typeof value === "string" ? value : ""}
+          onChange={onChange}
+          autoFocus={autoFocus}
+        />
+      );
     case "select":
       return (
         <ChoiceGrid
@@ -71,6 +80,16 @@ export function StepField({ step, value, onChange, onCommit, autoFocus }: Props)
     case "stars":
       return (
         <Stars
+          value={typeof value === "number" ? value : null}
+          onPick={(v) => {
+            onChange(v);
+            onCommit(v);
+          }}
+        />
+      );
+    case "scale":
+      return (
+        <Scale
           value={typeof value === "number" ? value : null}
           onPick={(v) => {
             onChange(v);
@@ -126,6 +145,68 @@ function TextField({
       }}
       className="h-16 w-full rounded-xl border border-border bg-surface px-5 text-xl text-ink outline-none transition-all duration-200 placeholder:text-muted/45 focus:border-primary focus:bg-bg focus:shadow-[0_0_0_3px_oklch(0.67_0.15_64/0.15)]"
     />
+  );
+}
+
+function TextArea({
+  step,
+  value,
+  onChange,
+  autoFocus,
+}: {
+  step: Step;
+  value: string;
+  onChange: (v: string) => void;
+  autoFocus?: boolean;
+}) {
+  return (
+    <textarea
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus={autoFocus}
+      value={value}
+      placeholder={step.placeholder}
+      rows={4}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full resize-none rounded-xl border border-border bg-surface px-5 py-4 text-lg leading-relaxed text-ink outline-none transition-all duration-200 placeholder:text-muted/45 focus:border-primary focus:bg-bg focus:shadow-[0_0_0_3px_oklch(0.67_0.15_64/0.15)]"
+    />
+  );
+}
+
+/** Note de 0 à 10 (style NPS) — un bouton par valeur. */
+function Scale({
+  value,
+  onPick,
+}: {
+  value: number | null;
+  onPick: (v: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-6 gap-2 sm:grid-cols-11">
+        {Array.from({ length: 11 }, (_, n) => {
+          const selected = value === n;
+          return (
+            <button
+              key={n}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onPick(n)}
+              className={`grid h-12 place-items-center rounded-lg border text-base font-semibold tabular-nums transition-colors duration-150 ${
+                selected
+                  ? "border-primary bg-primary text-white"
+                  : "border-border text-ink hover:border-ink/30"
+              }`}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex justify-between text-xs text-muted">
+        <span>0 — pas du tout</span>
+        <span>10 — excellent</span>
+      </div>
+    </div>
   );
 }
 

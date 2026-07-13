@@ -31,3 +31,4 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 export const AUDIT_TABLE = "audit_leads";
+export const R2_TABLE = "r2_responses";

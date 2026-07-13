@@ -15,9 +15,9 @@ export interface FunnelStep {
 export interface AnswerInsight {
   key: string;
   question: string;
-  type: "select" | "choice" | "yesno" | "stars";
+  type: "select" | "choice" | "yesno" | "stars" | "scale";
   buckets: Bucket[];
-  average?: number; // étoiles
+  average?: number; // étoiles (0..5) ou note (0..10)
 }
 
 export interface TimePoint {
@@ -41,6 +41,37 @@ export interface LeadRow {
   ouvert_accompagnement: boolean | null;
   investir_financierement: boolean | null;
   utm_campaign: string | null;
+}
+
+/** Ligne du tableau des réponses au questionnaire R2. */
+export interface R2LeadRow {
+  created_at: string;
+  nom_prenom: string | null;
+  note_r1: number | null;
+  objectif: string | null;
+  budget_investissement: string | null;
+  infos_decision: string | null;
+  pret_a_decider: boolean | null;
+  raison_hesitation: string | null;
+  utm_campaign: string | null;
+}
+
+/** Stats du questionnaire R2 (onglet dédié du dashboard). */
+export interface R2Stats {
+  configured: boolean;
+  totals: {
+    visits: number;
+    started: number;
+    completed: number;
+    completionRate: number; // 0..1 (completed / started)
+    medianDurationSec: number | null;
+    averageNote: number | null; // note moyenne du R1 (0..10)
+    readyToDecide: number; // pret_a_decider = true
+  };
+  funnel: FunnelStep[];
+  answerInsights: AnswerInsight[];
+  timeseries: TimePoint[];
+  leads: R2LeadRow[];
 }
 
 export interface Stats {

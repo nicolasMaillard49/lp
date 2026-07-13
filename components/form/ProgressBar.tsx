@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 
 export function ProgressBar({ current, total }: { current: number; total: number }) {
   const pct = Math.round((current / total) * 100);
@@ -13,7 +13,7 @@ export function ProgressBar({ current, total }: { current: number; total: number
         <span className="tabular-nums">{pct}%</span>
       </div>
       <div className="h-px w-full bg-border">
-        <motion.div
+        <m.div
           className="h-full bg-primary"
           initial={false}
           animate={{ width: `${pct}%` }}

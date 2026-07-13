@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { Roboto } from "next/font/google";
-import type { Stats } from "@/lib/statsTypes";
+import type { Stats, R2Stats } from "@/lib/statsTypes";
 import {
   BERRY,
   GradientCard,
@@ -18,6 +18,7 @@ import {
   TimeChart,
   RatingDonut,
   LeadsTable,
+  R2Table,
 } from "@/components/admin/parts";
 
 const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "700"] });
@@ -37,11 +38,13 @@ const MENU = [
   { key: "Funnel", label: "Funnel", icon: FilterIcon },
   { key: "Provenance", label: "Provenance", icon: GlobeIcon },
   { key: "Leads", label: "Leads", icon: UsersIcon },
+  { key: "R2", label: "Questionnaire R2", icon: FormIcon },
 ] as const;
 type Tab = (typeof MENU)[number]["key"];
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [r2Stats, setR2Stats] = useState<R2Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Réponses");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -51,6 +54,10 @@ export default function AdminDashboard() {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then(setStats)
       .catch(() => setError("Impossible de charger les stats."));
+    fetch("/api/admin/r2")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then(setR2Stats)
+      .catch(() => {});
   }, []);
 
   return (
@@ -74,7 +81,7 @@ export default function AdminDashboard() {
             </svg>
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-nmf.png" alt="NMF Agence" className="size-8 rounded-md" />
+          <img src="/logo-nmf-96.png" alt="NMF Agence" className="size-8 rounded-md" />
           <div className="min-w-0">
             <h1 className="text-base font-bold leading-none" style={{ fontFamily: "inherit" }}>Diagnostic</h1>
             <p className="mt-0.5 text-xs" style={{ color: BERRY.muted }}>Dashboard NMF Agence</p>
@@ -144,6 +151,14 @@ export default function AdminDashboard() {
             >
               <GlobeIcon /> Voir la LP
             </a>
+            <a
+              href="/preparation"
+              target="_blank"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
+              style={{ color: BERRY.muted }}
+            >
+              <GlobeIcon /> Voir la LP R2
+            </a>
           </nav>
         </aside>
 
@@ -151,7 +166,9 @@ export default function AdminDashboard() {
         <main className="min-w-0 flex-1 p-4 sm:p-6">
           {error && <Centered>{error}</Centered>}
           {!error && !stats && <Centered>Chargement…</Centered>}
-          {stats && <Content stats={stats} tab={tab} />}
+          {stats && tab !== "R2" && <Content stats={stats} tab={tab} />}
+          {tab === "R2" &&
+            (r2Stats ? <R2Content stats={r2Stats} /> : <Centered>Chargement…</Centered>)}
         </main>
       </div>
     </div>
@@ -242,6 +259,93 @@ function Content({ stats, tab }: { stats: Stats; tab: Tab }) {
           <LeadsTable leads={stats.leads} />
         </SectionCard>
       )}
+    </div>
+  );
+}
+
+/** Onglet Questionnaire R2 — réponses du questionnaire pré-décision. */
+function R2Content({ stats }: { stats: R2Stats }) {
+  const t = stats.totals;
+  const noteInsight = stats.answerInsights.find((ai) => ai.type === "scale");
+  const otherInsights = stats.answerInsights.filter((ai) => ai.type !== "scale");
+  return (
+    <div className="space-y-5">
+      {!stats.configured && (
+        <div
+          className="rounded-xl border p-4 text-sm"
+          style={{ background: "#ffebee", borderColor: "#ffcdd2", color: "#c62828" }}
+        >
+          Supabase n'est pas configuré : les statistiques sont vides.
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <GradientCard
+          variant="purple"
+          label="Questionnaires complétés"
+          value={String(t.completed)}
+          sub={`${pct(t.completionRate)} des ${t.started} commencés · ${t.visits} visites`}
+          icon={<CheckIcon />}
+        />
+        <GradientCard
+          variant="blue"
+          label="Prêts à décider en fin d'appel"
+          value={String(t.readyToDecide)}
+          sub={`sur ${t.completed} questionnaires complétés`}
+          icon={<EyeIcon />}
+        />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+          <SmallDarkCard
+            label="Note moyenne du R1"
+            value={t.averageNote == null ? "—" : `${t.averageNote.toFixed(1)}/10`}
+            icon={<FlameIcon />}
+          />
+          <SmallLightCard label="Durée médiane de remplissage" value={duration(t.medianDurationSec)} icon={<ClockIcon />} />
+        </div>
+      </div>
+
+      <SectionCard title="Visites & soumissions dans le temps">
+        <TimeChart points={stats.timeseries} />
+      </SectionCard>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {noteInsight && (
+          <SectionCard title={noteInsight.question}>
+            <RatingDonut
+              average={noteInsight.average ?? 0}
+              count={noteInsight.buckets.reduce((s, b) => s + b.count, 0)}
+              max={10}
+            />
+          </SectionCard>
+        )}
+        {otherInsights.map((ai) => (
+          <SectionCard key={ai.key} title={ai.question}>
+            <BarList buckets={ai.buckets} />
+          </SectionCard>
+        ))}
+      </div>
+
+      <SectionCard
+        title="Où ils décrochent"
+        subtitle="Nombre de personnes ayant répondu à chaque question"
+      >
+        <FunnelChart funnel={stats.funnel} />
+      </SectionCard>
+
+      <SectionCard
+        title={`Réponses complétées (${stats.leads.length})`}
+        right={
+          <a
+            href="/api/admin/export?form=r2"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+            style={{ background: BERRY.primaryDark }}
+          >
+            Exporter CSV
+          </a>
+        }
+      >
+        <R2Table leads={stats.leads} />
+      </SectionCard>
     </div>
   );
 }

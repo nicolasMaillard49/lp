@@ -161,8 +161,41 @@
   transition: transform 0.75s var(--ease-out-expo);
 }
 
+/* ── Entrées au chargement en CSS pur (LCP-friendly) ──
+   Rendues dans le HTML serveur : elles démarrent dès le premier paint,
+   sans attendre l'hydratation JS — contrairement aux entrées motion. */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.enter {
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.enter-1 { animation-delay: 0.05s; }
+.enter-2 { animation-delay: 0.15s; }
+.enter-3 { animation-delay: 0.25s; }
+.enter-4 { animation-delay: 0.35s; }
+.enter-5 { animation-delay: 0.45s; }
+
+/* Rideau d'intro : visible immédiatement (SSR), sort tout seul en CSS. */
+@keyframes curtain-exit {
+  from { transform: translateY(0); }
+  to { transform: translateY(-100%); }
+}
+.curtain {
+  animation: curtain-exit 0.55s cubic-bezier(0.76, 0, 0.24, 1) 1s both;
+}
+@keyframes curtain-item {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.curtain-item {
+  animation: curtain-item 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .curtain { display: none; }
   .pulse-ring,
   .marquee-track,
   .shimmer-ring { animation: none; }

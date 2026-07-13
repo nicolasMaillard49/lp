@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 
 type RevealProps = {
@@ -25,7 +25,7 @@ export function Reveal({
   as = "div",
 }: RevealProps) {
   const reduce = useReducedMotion();
-  const MotionTag = motion[as];
+  const MotionTag = m[as];
 
   return (
     <MotionTag

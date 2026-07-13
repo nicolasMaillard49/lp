@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import Script from "next/script";
 import { FB_PIXEL_ID } from "@/lib/fpixel";
+import { MotionProvider } from "@/components/MotionProvider";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -44,9 +45,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>
-        {children}
-        {/* Meta Pixel — NMF Agence */}
-        <Script id="fb-pixel" strategy="afterInteractive">
+        <MotionProvider>{children}</MotionProvider>
+        {/* Meta Pixel — chargé à l'idle : n'entre pas en concurrence
+            avec l'hydratation sur mobile (le PageView part quand même). */}
+        <Script id="fb-pixel" strategy="lazyOnload">
           {`!function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};

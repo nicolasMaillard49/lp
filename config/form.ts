@@ -20,12 +20,14 @@ export const form = {
 /** Type d'écran de chaque étape. */
 export type FieldType =
   | "text"
+  | "textarea"
   | "email"
   | "tel"
   | "select"
   | "choice"
   | "yesno"
-  | "stars";
+  | "stars"
+  | "scale"; // note de 0 à 10
 
 export interface Step {
   /** Clé = colonne Supabase. */
