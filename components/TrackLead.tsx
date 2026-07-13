@@ -13,11 +13,18 @@ export function TrackLead() {
   useEffect(() => {
     try {
       if (sessionStorage.getItem("nmf_lead_fired")) return;
-      sessionStorage.setItem("nmf_lead_fired", "1");
     } catch {
       // sessionStorage indisponible → on déclenche quand même
     }
-    fbTrack("Lead");
+    // Le flag n'est posé que si fbq a bien reçu l'event (sinon on
+    // retentera au prochain rendu/refresh au lieu de perdre le Lead).
+    if (fbTrack("Lead")) {
+      try {
+        sessionStorage.setItem("nmf_lead_fired", "1");
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
   return null;

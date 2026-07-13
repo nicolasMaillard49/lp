@@ -15,10 +15,12 @@ declare global {
  * Déclenche un événement standard Meta (ex. "Lead", "Schedule").
  * No-op côté serveur ou si le pixel n'est pas encore chargé.
  */
-export function fbTrack(event: string, params?: Record<string, unknown>) {
+export function fbTrack(event: string, params?: Record<string, unknown>): boolean {
   if (typeof window !== "undefined" && typeof window.fbq === "function") {
     window.fbq("track", event, params);
+    return true;
   }
+  return false;
 }
 
 /**
