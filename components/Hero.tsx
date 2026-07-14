@@ -122,7 +122,7 @@ export function Hero() {
         >
           <Magnetic className="w-full sm:w-auto">
             <motion.a
-              href="#video"
+              href="#reserver"
               whileHover={reduce ? undefined : { scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               className="btn-shine group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-7 text-base font-semibold text-white shadow-[0_8px_30px_-8px_oklch(0.67_0.15_64/0.6)] sm:w-auto"

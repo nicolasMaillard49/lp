@@ -4,9 +4,11 @@ import { useEffect } from "react";
 import { fbTrack } from "@/lib/fpixel";
 
 /**
- * Déclenche l'événement Meta "Lead" à l'arrivée sur la VSL.
- * L'utilisateur n'atteint /bienvenue qu'après avoir complété le form iClosed
- * (ou l'audit on-site), donc cette page = la conversion.
+ * Déclenche l'événement Meta "Lead" à l'arrivée sur /bienvenue.
+ * On n'atteint cette page qu'après avoir SOUMIS le form de diagnostic
+ * (qualification + contact) : Lead = lead qualifié capté en base. Le
+ * booking Koalendar se fait ensuite sur cette même page (BookingEmbed)
+ * — la conversion ne dépend d'aucune redirection tierce.
  * Garde de session pour éviter les doublons sur refresh.
  */
 export function TrackLead() {

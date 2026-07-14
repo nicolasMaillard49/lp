@@ -200,28 +200,14 @@ export const TOTAL_STEPS = steps.length;
 export type Known = Readonly<Record<string, unknown>>;
 
 /**
- * L'étape booking (iClosed) pose ses PROPRES questions de qualification
- * — réplique des 13, vérifié en conditions réelles le 2026-07-14, et
- * l'événement n'est pas modifiable par automatisation (l'éditeur gèle).
- * Tant que c'est le cas, poser les nôtres = tout demander DEUX FOIS.
- *
- * `true`  → notre form ne collecte que le CONTACT : le lead atterrit
- *           dans Supabase (avec l'attribution et les données du
- *           simulateur), iClosed porte la qualification.
- * `false` → à basculer DÈS QUE les questions sont retirées de
- *           l'événement iClosed (garder email/prénom/nom là-bas) :
- *           notre form reprend la qualification complète.
- */
-export const QUALIF_DANS_ICLOSED = true;
-
-/**
  * Les étapes qu'il reste à poser. Un seul composant sert ainsi le
  * parcours ads (court, le simulateur a déjà parlé) et l'organique
  * (complet) — sans dupliquer le formulaire.
+ *
+ * La qualification vit ICI en entier depuis le passage à Koalendar
+ * (2026-07-15) : le booking est un calendrier pur (nom + email, zéro
+ * question), donc plus aucun risque de demander deux fois.
  */
 export function visibleSteps(known: Known = {}): Step[] {
-  const base = QUALIF_DANS_ICLOSED
-    ? steps.filter((s) => s.phase === "contact")
-    : steps;
-  return base.filter((s) => !(s.key in known));
+  return steps.filter((s) => !(s.key in known));
 }

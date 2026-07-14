@@ -16,20 +16,22 @@ import { StepField } from "./StepField";
 import { ProgressBar } from "./ProgressBar";
 
 /**
- * URL de booking iClosed — on y transporte l'attribution (utm/fbclid,
- * qu'iClosed re-transmet à /bienvenue : le Lead Meta reste attribué)
- * et le contact en préremplissage best-effort (ignoré à ce jour).
+ * Passe le contact à /bienvenue via sessionStorage (même domaine) —
+ * BookingEmbed y préremplit le calendrier Koalendar. Pas d'URL : on ne
+ * met jamais un email en query string.
  */
-function bookingUrl(answers: Record<string, unknown>): string {
-  const u = new URL(site.booking.url);
-  const cur = new URLSearchParams(window.location.search);
-  for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid"]) {
-    const v = cur.get(k);
-    if (v) u.searchParams.set(k, v);
+function stashContact(answers: Record<string, unknown>) {
+  try {
+    sessionStorage.setItem(
+      "nmf_contact",
+      JSON.stringify({
+        name: answers.nom_prenom ? String(answers.nom_prenom) : undefined,
+        email: answers.email ? String(answers.email) : undefined,
+      })
+    );
+  } catch {
+    // sessionStorage indisponible → calendrier non prérempli, pas bloquant
   }
-  if (answers.email) u.searchParams.set("email", String(answers.email));
-  if (answers.nom_prenom) u.searchParams.set("name", String(answers.nom_prenom));
-  return u.toString();
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -125,14 +127,16 @@ export function AuditForm({
       if (isLast) {
         setSubmitting(true);
         submit(payload);
-        /* Signal d'intention pour Meta — distinct du Lead, qui ne se
-           déclenche qu'à l'arrivée sur /bienvenue (= RDV réservé). */
+        /* Signal d'intention pour Meta — le Lead, lui, se déclenche à
+           l'arrivée sur /bienvenue (TrackLead), même domaine : aucune
+           dépendance à un outil tiers pour la conversion. */
         fbTrack("SubmitApplication");
+        stashContact(payload);
         setDone(true);
-        /* Le lead est en base ; la suite se passe chez iClosed
-           (qualification + créneau), qui ramène sur /bienvenue. */
+        /* Le lead est en base ; le créneau se choisit sur /bienvenue
+           (calendrier Koalendar intégré, prérempli via stashContact). */
         window.setTimeout(
-          () => window.location.assign(bookingUrl(payload)),
+          () => window.location.assign(form.redirectTo),
           reduce ? 400 : 1600
         );
         return;

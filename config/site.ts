@@ -16,17 +16,17 @@ export const site = {
   founder: "Nicolas Maillard",
 
   /**
-   * Étape booking du funnel — événement iClosed « Audit de situation ».
-   * iClosed collecte email/prénom/nom, pose SES questions de
-   * qualification (réplique des 13 — vérifié le 2026-07-14), propose le
-   * créneau, puis redirige vers /bienvenue (transmission des paramètres
-   * activée : le fbclid survit au passage, testé le 2026-07-11).
-   * ⚠️ iClosed ignore les paramètres de préremplissage (email, name…)
-   * — testés le 2026-07-14, tous sans effet. On les envoie quand même :
-   * inoffensif aujourd'hui, utile s'ils l'activent un jour.
+   * Étape booking du funnel — Koalendar « Réunion Nicolas Maillard »,
+   * INTÉGRÉ dans /bienvenue (widget inline, voir BookingEmbed). Le
+   * prospect ne quitte jamais le domaine : la qualification est dans
+   * NOTRE form, Koalendar ne sert qu'au créneau (nom + email, zéro
+   * question — vérifié le 2026-07-15, préremplissage ?name=&email= OK).
+   * ⚠️ Pas de redirection post-booking ni de webhook : fonctionnalités
+   * Pro (plan payant). D'où l'embed — le Lead Meta se déclenche à
+   * l'arrivée sur /bienvenue, indépendamment de Koalendar.
    */
   booking: {
-    url: "https://app.iclosed.io/e/NMF-Agence/vsl-funnel",
+    url: "https://koalendar.com/e/reunion-nicolas-maillard",
   },
 
   /** Lien secondaire : reprogrammer / mail de confirmation / contact. */
@@ -50,12 +50,15 @@ export const site = {
     cta: "On en parle 20 minutes ?",
   },
 
+  /* Le visiteur arrive ici APRÈS le form, AVANT d'avoir réservé :
+     l'action n°1 est le créneau (section #reserver), les 4 étapes de
+     préparation viennent ensuite. */
   hero: {
     badge: "Action requise",
-    title: "Attention : sans ces 4 étapes, ton rendez-vous sera annulé.",
+    title: "Attention : sans créneau réservé, il n'y a pas de rendez-vous.",
     subtitle:
-      "Tu as réservé, mais RIEN n'est confirmé. Complète les 4 étapes ci-dessous dès maintenant. Si tu ne le fais pas, j'annule notre entretien — sans relance, sans exception.",
-    ctaPrimary: "Commencer l'étape 1",
+      "Ton diagnostic est bien enregistré — mais RIEN n'est réservé. Choisis ton créneau ci-dessous, maintenant. Ensuite, suis les 4 étapes pour que nos 20 minutes valent vraiment le coup.",
+    ctaPrimary: "Choisir mon créneau",
   },
 
   /**

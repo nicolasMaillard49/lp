@@ -2,6 +2,7 @@ import { Intro } from "@/components/Intro";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
+import { BookingEmbed } from "@/components/BookingEmbed";
 import { Marquee } from "@/components/Marquee";
 import { VideoSection } from "@/components/VideoSection";
 import { Agenda } from "@/components/Agenda";
@@ -20,6 +21,8 @@ export default function Bienvenue() {
       <Header />
       <main>
         <Hero />
+        {/* L'action n°1 : réserver — le reste de la page prépare le RDV */}
+        <BookingEmbed />
         <Marquee />
         {/* Flow de confirmation — 4 étapes numérotées */}
         <VideoSection />
