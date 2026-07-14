@@ -5,17 +5,50 @@
 //  regarder la vidéo pour qu'il arrive préparé (et ne pose pas de lapin).
 // ──────────────────────────────────────────────────────────────
 
+import { simulateur } from "./simulateur";
+
+const METIERS = simulateur.metiers.map((m) => m.nom);
+
 export const site = {
   /** Nom de l'entreprise (en-tête + footer). */
   name: "NMF Agence",
   /** Nom du fondateur, affiché en signature. */
   founder: "Nicolas Maillard",
 
+  /**
+   * Étape booking du funnel — événement iClosed « Audit de situation ».
+   * iClosed collecte email/prénom/nom, pose SES questions de
+   * qualification (réplique des 13 — vérifié le 2026-07-14), propose le
+   * créneau, puis redirige vers /bienvenue (transmission des paramètres
+   * activée : le fbclid survit au passage, testé le 2026-07-11).
+   * ⚠️ iClosed ignore les paramètres de préremplissage (email, name…)
+   * — testés le 2026-07-14, tous sans effet. On les envoie quand même :
+   * inoffensif aujourd'hui, utile s'ils l'activent un jour.
+   */
+  booking: {
+    url: "https://app.iclosed.io/e/NMF-Agence/vsl-funnel",
+  },
+
   /** Lien secondaire : reprogrammer / mail de confirmation / contact. */
   ctaHref: "#contact",
 
   /** Nombre d'étapes du flow de confirmation. */
   totalSteps: 4,
+
+  /**
+   * LP d'acquisition `/` — page d'atterrissage des ads (2026-07-14).
+   * À ne pas confondre avec `hero` ci-dessous, qui est le hero POST-booking
+   * de `/bienvenue` (« sans ces 4 étapes ton RDV sera annulé ») : ce ton
+   * n'a aucun sens pour un inconnu qui découvre l'agence.
+   */
+  lp: {
+    eyebrow: "Artisans du bâtiment",
+    title: "Combien de chantiers tu laisses à ton concurrent chaque mois ?",
+    subtitle:
+      "Règle les curseurs avec tes vrais chiffres — ton métier, ta ville, ton budget. Tu vois ce que la publicité Google peut te rapporter. Pas de promesse en l'air : ton calcul, sous tes yeux, en 2 minutes.",
+    reassurance: "Gratuit · Sans inscription · Aucun engagement",
+    cta: "On en parle 20 minutes ?",
+  },
 
   hero: {
     badge: "Action requise",
@@ -25,21 +58,13 @@ export const site = {
     ctaPrimary: "Commencer l'étape 1",
   },
 
-  /** Métiers défilants sous le hero (marquee). */
-  metiers: [
-    "Plombier",
-    "Électricien",
-    "Maçon",
-    "Menuisier",
-    "Couvreur",
-    "Carreleur",
-    "Peintre",
-    "Chauffagiste",
-    "Paysagiste",
-    "Serrurier",
-    "Plaquiste",
-    "Terrassier",
-  ],
+  /**
+   * Métiers — marquee + options du formulaire.
+   * Dérivé de `simulateur.metiers` : le simulateur est la source de vérité
+   * (lui seul porte les CPC / panier / transfo). Ne pas lister à la main
+   * ici, sinon un métier proposé au form devient insimulable.
+   */
+  metiers: METIERS,
 
   /** Warning qui prépare le client → rendez-vous plus rentable. */
   notice: {

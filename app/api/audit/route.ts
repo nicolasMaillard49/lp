@@ -25,6 +25,30 @@ function sanitizeAnswers(input: unknown): Record<string, unknown> {
   return out;
 }
 
+/**
+ * Valeurs du simulateur attachées au lead (parcours ads) — colonnes
+ * ajoutées par la migration 0004, appliquée en prod le 2026-07-14.
+ * Whitelist explicite + coercition int : tout le reste est jeté.
+ */
+const SIM_KEYS = [
+  "budget_ads",
+  "budget_lsa",
+  "sim_panier",
+  "sim_transfo",
+  "sim_ca_estime",
+  "sim_bassin",
+] as const;
+
+function sanitizeSim(input: unknown): Record<string, number> {
+  const o = (input ?? {}) as Record<string, unknown>;
+  const out: Record<string, number> = {};
+  for (const k of SIM_KEYS) {
+    const n = Number(o[k]);
+    if (Number.isFinite(n) && n >= 0) out[k] = Math.round(n);
+  }
+  return out;
+}
+
 function isUuid(v: unknown): v is string {
   return (
     typeof v === "string" &&
@@ -79,12 +103,14 @@ export async function POST(req: NextRequest) {
 
   // progress | submit
   const answers = sanitizeAnswers(body.answers);
+  const sim = sanitizeSim(body.answers);
   const durationRaw = Number(body.duration_seconds);
   const payload: Record<string, unknown> = {
     session_id,
     visitor_id: isUuid(visitor_id) ? visitor_id : null,
     last_step: lastStep,
     ...answers,
+    ...sim,
   };
 
   if (event === "submit") {

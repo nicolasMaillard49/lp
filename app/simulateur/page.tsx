@@ -42,14 +42,20 @@ export default function SimulateurPage() {
 
       <main className="px-5 py-14 sm:px-8 sm:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary">
+          {/* En-tête aligné sur l'outil : bleu & blanc, Helvetica.
+              Le serif ambre de la LP jurait au-dessus d'un document
+              d'estimation — deux identités qui se contredisent. */}
+          <div className="mx-auto max-w-2xl font-helvetica">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sim-blue">
               {simulateur.eyebrow}
             </p>
-            <h1 className="mt-4 text-[clamp(1.8rem,4.5vw,2.8rem)] font-normal leading-tight text-ink">
+            {/* `font-helvetica` doit être SUR le h1 : la règle de base
+                `h1,h2,h3 { font-family: var(--font-display) }` de
+                globals.css gagne sur la police héritée du parent. */}
+            <h1 className="mt-3 font-helvetica text-[clamp(1.6rem,4vw,2.4rem)] font-bold leading-tight tracking-tight text-sim-ink">
               {simulateur.title}
             </h1>
-            <p className="mt-4 text-pretty leading-relaxed text-muted">
+            <p className="mt-3 text-pretty leading-relaxed text-sim-muted">
               {simulateur.subtitle}
             </p>
           </div>

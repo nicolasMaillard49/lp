@@ -1,15 +1,48 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { steps, form, TOTAL_STEPS, type Step } from "@/config/form";
+import {
+  form,
+  steps as allSteps,
+  visibleSteps,
+  type Known,
+  type Step,
+} from "@/config/form";
 import { site } from "@/config/site";
+import { fbTrack } from "@/lib/fpixel";
 import { useAuditSession } from "@/hooks/useAuditSession";
 import { StepField } from "./StepField";
 import { ProgressBar } from "./ProgressBar";
 
+/**
+ * URL de booking iClosed — on y transporte l'attribution (utm/fbclid,
+ * qu'iClosed re-transmet à /bienvenue : le Lead Meta reste attribué)
+ * et le contact en préremplissage best-effort (ignoré à ce jour).
+ */
+function bookingUrl(answers: Record<string, unknown>): string {
+  const u = new URL(site.booking.url);
+  const cur = new URLSearchParams(window.location.search);
+  for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid"]) {
+    const v = cur.get(k);
+    if (v) u.searchParams.set(k, v);
+  }
+  if (answers.email) u.searchParams.set("email", String(answers.email));
+  if (answers.nom_prenom) u.searchParams.set("name", String(answers.nom_prenom));
+  return u.toString();
+}
+
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/** Ce que le simulateur a déjà appris — réaffiché pendant tout le form. */
+export type Recap = {
+  /** "Plombier · Bordeaux · 600 €/mois" */
+  title: string;
+  /** "14 chantiers/mois · 7 000 € de CA estimé" */
+  detail?: string;
+  /** Renvoie au simulateur pour corriger. */
+  onEdit?: () => void;
+};
 
 /** Taille de la question (Fraunces) selon sa longueur, pour rester net à l'écran. */
 function questionSizeClass(q: string): string {
@@ -40,10 +73,21 @@ function validate(step: Step, value: unknown): string | null {
   return null;
 }
 
-export function AuditForm() {
-  const router = useRouter();
+export function AuditForm({
+  known = {},
+  recap,
+}: {
+  /** Réponses déjà obtenues ailleurs (simulateur) — ces écrans sautent. */
+  known?: Known;
+  recap?: Recap;
+}) {
   const reduce = useReducedMotion();
   const { progress, submit } = useAuditSession();
+
+  /* La longueur du form se déduit de `known` : court sur le parcours ads
+     (le simulateur a déjà parlé), complet en organique. */
+  const steps = useMemo(() => visibleSteps(known), [known]);
+  const total = steps.length;
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -54,7 +98,7 @@ export function AuditForm() {
   const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   const step = steps[index];
-  const isLast = index === TOTAL_STEPS - 1;
+  const isLast = index === total - 1;
 
   const setValue = useCallback((v: unknown) => {
     setError(null);
@@ -75,22 +119,35 @@ export function AuditForm() {
       }
       setError(null);
 
+      /* Ce que le simulateur sait fait partie du lead, pas juste de l'UI. */
+      const payload = { ...known, ...nextAnswers };
+
       if (isLast) {
         setSubmitting(true);
-        submit(nextAnswers);
+        submit(payload);
+        /* Signal d'intention pour Meta — distinct du Lead, qui ne se
+           déclenche qu'à l'arrivée sur /bienvenue (= RDV réservé). */
+        fbTrack("SubmitApplication");
         setDone(true);
+        /* Le lead est en base ; la suite se passe chez iClosed
+           (qualification + créneau), qui ramène sur /bienvenue. */
         window.setTimeout(
-          () => router.push(form.redirectTo),
-          reduce ? 300 : 1300
+          () => window.location.assign(bookingUrl(payload)),
+          reduce ? 400 : 1600
         );
         return;
       }
 
-      progress(index + 1, nextAnswers);
+      /* `last_step` doit rester comparable entre parcours : on remonte la
+         position CANONIQUE de la question (config), pas l'index visible —
+         sinon l'étape 3 du parcours ads et celle de l'organique seraient
+         deux questions différentes dans le funnel d'abandon de /admin. */
+      const canonical = allSteps.findIndex((s) => s.key === step.key) + 1;
+      progress(canonical, payload);
       setDirection(1);
       setIndex((i) => i + 1);
     },
-    [answers, step, isLast, index, submitting, submit, progress, router, reduce]
+    [answers, step, isLast, index, submitting, submit, progress, reduce, known]
   );
 
   const back = useCallback(() => {
@@ -107,6 +164,10 @@ export function AuditForm() {
   const showNextButton =
     step.type === "text" || step.type === "email" || step.type === "tel";
 
+  /* Le disclaimer filtre — il ne sert qu'au moment d'engager, pas en
+     accueil d'un inconnu qui n'a encore rien lu. */
+  const showFilter = !done && step.phase === "contact" && showDisclaimer;
+
   return (
     <main className="mx-auto flex min-h-[100svh] w-full max-w-2xl flex-col px-5 py-8 sm:px-6">
       {/* En-tête : marque + progression */}
@@ -121,9 +182,34 @@ export function AuditForm() {
           </span>
         </div>
 
-        {!done && <ProgressBar current={index + 1} total={TOTAL_STEPS} />}
+        {!done && <ProgressBar current={index + 1} total={total} />}
 
-        {!done && showDisclaimer && (
+        {/* Ce qu'on sait déjà — montré, pas sauté en silence : sinon
+            l'artisan ne perçoit pas qu'on a retenu ses réponses. */}
+        {!done && recap && (
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/[0.04] px-4 py-3">
+            <svg viewBox="0 0 16 16" className="mt-0.5 size-4 shrink-0 text-primary" fill="none" aria-hidden>
+              <path d="M3.5 8.2 6.5 11l6-6.6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-ink">{recap.title}</p>
+              {recap.detail && (
+                <p className="mt-0.5 text-xs text-muted">{recap.detail}</p>
+              )}
+            </div>
+            {recap.onEdit && (
+              <button
+                type="button"
+                onClick={recap.onEdit}
+                className="shrink-0 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                Modifier
+              </button>
+            )}
+          </div>
+        )}
+
+        {showFilter && (
           <div className="mt-4 flex items-start gap-2.5 border-t border-border pt-4 text-xs leading-relaxed text-muted">
             <svg viewBox="0 0 20 20" className="mt-px size-4 shrink-0 text-accent" fill="none" aria-hidden>
               <path d="M10 2.5 18.5 17H1.5L10 2.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -250,7 +336,9 @@ function DoneScreen({ reduce }: { reduce: boolean }) {
       <h1 className="mb-2 font-helvetica text-2xl font-bold tracking-tight text-ink sm:text-3xl">
         Merci, c'est enregistré.
       </h1>
-      <p className="text-muted">On prépare ton audit — redirection en cours.</p>
+      <p className="text-muted">
+        Dernière étape : choisis ton créneau — on t'y emmène.
+      </p>
     </motion.div>
   );
 }
