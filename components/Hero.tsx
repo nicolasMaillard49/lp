@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   motion,
   useMotionValue,
@@ -7,13 +8,45 @@ import {
   useReducedMotion,
 } from "motion/react";
 import { site } from "@/config/site";
+import { CONTACT_KEY } from "./BookingEmbed";
 import { Aurora } from "./Aurora";
 import { Magnetic } from "./Magnetic";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export function Hero() {
+export function Hero({
+  variant = "classic",
+}: {
+  /**
+   * `classic` : le visiteur a déjà son RDV (défaut historique).
+   * `funnel`  : il sort du form ads, rien n'est réservé → copy créneau
+   *             + prénom (sessionStorage) + CTA vers #reserver.
+   */
+  variant?: "classic" | "funnel";
+}) {
+  const conf = variant === "funnel" ? site.heroFunnel : site.hero;
   const reduce = useReducedMotion();
+
+  /* Prénom lu APRÈS hydratation (le SSR ne connaît pas sessionStorage —
+     un useState initialisé dessus créerait un mismatch React). */
+  const [prenom, setPrenom] = useState("");
+  useEffect(() => {
+    if (variant !== "funnel") return;
+    try {
+      const raw = sessionStorage.getItem(CONTACT_KEY);
+      const name = raw ? (JSON.parse(raw) as { name?: string }).name : undefined;
+      const first = name?.trim().split(/\s+/)[0];
+      if (first) setPrenom(first[0].toUpperCase() + first.slice(1).toLowerCase());
+    } catch {
+      // sessionStorage indisponible → version générique
+    }
+  }, [variant]);
+
+  const subtitleRaw = conf.subtitle.replace(
+    "{prenom}",
+    prenom ? `${prenom}, ` : ""
+  );
+  const subtitle = subtitleRaw[0].toUpperCase() + subtitleRaw.slice(1);
 
   // Spotlight qui suit la souris (desktop)
   const mx = useMotionValue(50);
@@ -91,14 +124,14 @@ export function Hero() {
               strokeLinejoin="round"
             />
           </svg>
-          {site.hero.badge}
+          {conf.badge}
         </motion.p>
 
         <motion.h1
           variants={titleWords}
           className="text-[clamp(2.3rem,6.4vw,4.5rem)] font-normal leading-[1.1] tracking-[-0.005em] text-ink"
         >
-          {site.hero.title.split(" ").map((w, i) => (
+          {conf.title.split(" ").map((w, i) => (
             <motion.span
               key={`${w}-${i}`}
               variants={word}
@@ -113,7 +146,7 @@ export function Hero() {
           variants={item}
           className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted sm:text-lg"
         >
-          {site.hero.subtitle}
+          {subtitle}
         </motion.p>
 
         <motion.div
@@ -122,12 +155,12 @@ export function Hero() {
         >
           <Magnetic className="w-full sm:w-auto">
             <motion.a
-              href="#reserver"
+              href={conf.ctaHref}
               whileHover={reduce ? undefined : { scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               className="btn-shine group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-7 text-base font-semibold text-white shadow-[0_8px_30px_-8px_oklch(0.67_0.15_64/0.6)] sm:w-auto"
             >
-              {site.hero.ctaPrimary}
+              {conf.ctaPrimary}
               <svg className="size-4 transition-transform duration-300 group-hover:translate-y-0.5" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <path d="M8 3v10M4 9l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

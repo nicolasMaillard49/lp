@@ -133,10 +133,12 @@ export function AuditForm({
         fbTrack("SubmitApplication");
         stashContact(payload);
         setDone(true);
-        /* Le lead est en base ; le créneau se choisit sur /bienvenue
-           (calendrier Koalendar intégré, prérempli via stashContact). */
+        /* Le lead est en base ; le créneau se choisit sur /bienvenue en
+           variante booking (`?reserver=1` : Koalendar intégré + prénom,
+           préremplis via stashContact). Sans ce flag, /bienvenue reste la
+           page « ton RDV existe déjà » servie aux clients bookés à la main. */
         window.setTimeout(
-          () => window.location.assign(form.redirectTo),
+          () => window.location.assign(`${form.redirectTo}?reserver=1`),
           reduce ? 400 : 1600
         );
         return;

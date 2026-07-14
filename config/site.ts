@@ -50,15 +50,28 @@ export const site = {
     cta: "On en parle 20 minutes ?",
   },
 
-  /* Le visiteur arrive ici APRÈS le form, AVANT d'avoir réservé :
-     l'action n°1 est le créneau (section #reserver), les 4 étapes de
-     préparation viennent ensuite. */
+  /* Hero par DÉFAUT de /bienvenue — le visiteur a DÉJÀ son rendez-vous
+     (réservé lui-même ou posé par Nicolas). Ne pas parler de créneau ici. */
   hero: {
     badge: "Action requise",
+    title: "Attention : sans ces 4 étapes, ton rendez-vous sera annulé.",
+    subtitle:
+      "Tu as réservé, mais RIEN n'est confirmé. Complète les 4 étapes ci-dessous dès maintenant. Si tu ne le fais pas, j'annule notre entretien — sans relance, sans exception.",
+    ctaPrimary: "Commencer l'étape 1",
+    ctaHref: "#video",
+  },
+
+  /* Variante FUNNEL ADS (/bienvenue?reserver=1) — il sort du form, rien
+     n'est réservé : l'action n°1 est le créneau (section #reserver).
+     `{prenom}` dans le subtitle est remplacé côté client (sessionStorage,
+     posé par AuditForm au submit) — vide si inconnu. */
+  heroFunnel: {
+    badge: "Dernière étape",
     title: "Attention : sans créneau réservé, il n'y a pas de rendez-vous.",
     subtitle:
-      "Ton diagnostic est bien enregistré — mais RIEN n'est réservé. Choisis ton créneau ci-dessous, maintenant. Ensuite, suis les 4 étapes pour que nos 20 minutes valent vraiment le coup.",
+      "{prenom}ton diagnostic est bien enregistré — mais RIEN n'est réservé. Choisis ton créneau ci-dessous, maintenant. Ensuite, suis les 4 étapes pour que nos 20 minutes valent vraiment le coup.",
     ctaPrimary: "Choisir mon créneau",
+    ctaHref: "#reserver",
   },
 
   /**
