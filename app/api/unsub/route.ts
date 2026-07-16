@@ -52,7 +52,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const form = await req.formData().catch(() => null);
-  const t = form?.get("t");
+  /* Le token vient du formulaire (page GET) ou de la query string —
+     le one-click List-Unsubscribe-Post (Gmail/Yahoo) POSTe sur l'URL
+     de l'en-tête, qui porte ?t=… mais un corps sans champ `t`. */
+  const t = form?.get("t") ?? req.nextUrl.searchParams.get("t");
   if (!isUuid(t)) return neutre();
 
   const supabase = getSupabase();

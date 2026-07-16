@@ -1,9 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import { getSupabase, AUDIT_TABLE } from "@/lib/supabase";
 import { readRequestContext, sanitizeAttribution } from "@/lib/tracking";
 import { steps, TOTAL_STEPS } from "@/config/form";
 import { sendEmail } from "@/lib/email/client";
-import { logEmail } from "@/lib/email/log";
+import { EMAIL_LOG_TABLE, logEmail } from "@/lib/email/log";
 import { confirmationEmail } from "@/lib/email/templates/confirmation";
 import { notifInterneEmail } from "@/lib/email/templates/notif-interne";
 
@@ -134,16 +134,31 @@ export async function POST(req: NextRequest) {
   if (error) return fail(error.message);
 
   /* Emails #2 (confirmation prospect) + #3 (notif interne) au submit —
-     best-effort : ne modifient jamais la réponse HTTP. */
+     best-effort ET hors du chemin de réponse (after()). Un re-submit
+     (retry réseau, double-clic) ne renvoie pas les emails : email_log
+     fait foi sur (kind=confirmation, ref_id=lead). */
   if (event === "submit") {
-    try {
-      const { data: lead } = await supabase
-        .from(AUDIT_TABLE)
-        .select("*")
-        .eq("session_id", session_id)
-        .single();
-      if (lead) {
+    after(async () => {
+      try {
+        const { data: lead } = await supabase
+          .from(AUDIT_TABLE)
+          .select("*")
+          .eq("session_id", session_id)
+          .single();
+        if (!lead) return;
         const leadId = typeof lead.id === "string" ? lead.id : null;
+
+        if (leadId) {
+          const { data: already } = await supabase
+            .from(EMAIL_LOG_TABLE)
+            .select("id")
+            .eq("ref_id", leadId)
+            .eq("kind", "confirmation")
+            .eq("ok", true)
+            .limit(1);
+          if (already?.length) return;
+        }
+
         const to = typeof lead.email === "string" ? lead.email.trim().toLowerCase() : "";
         if (to.includes("@")) {
           const prenom =
@@ -160,10 +175,10 @@ export async function POST(req: NextRequest) {
           const result = await sendEmail({ to: notifTo, subject: notif.subject, html: notif.html });
           await logEmail({ email: notifTo, kind: "notif-interne", refId: leadId, result });
         }
+      } catch (e) {
+        console.error("[api/audit] email", e);
       }
-    } catch (e) {
-      console.error("[api/audit] email", e);
-    }
+    });
   }
 
   return NextResponse.json({ ok: true, stored: true });

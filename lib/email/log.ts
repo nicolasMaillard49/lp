@@ -7,7 +7,10 @@ import type { EmailKind, SendResult } from "./client";
    - claimRelance/settleRelance : « réserver puis envoyer » pour les
      relances — l'insert PREND le verrou (index unique partiel), un
      échec d'envoi REND le verrou (delete) pour retenter au cron
-     suivant. Le double envoi est impossible au niveau base. */
+     suivant. Le double envoi est impossible au niveau base.
+   Un crash entre claim et settle laisse un claim orphelin (ok=false) ;
+   le cron balaie ces orphelins de plus d'1 h au début de chaque run —
+   la relance est décalée d'un jour, jamais perdue ni doublée. */
 
 export const EMAIL_LOG_TABLE = "email_log";
 
@@ -42,7 +45,12 @@ export async function claimRelance(
     .insert({ email: email.toLowerCase(), kind, ok: false })
     .select("id")
     .single();
-  if (error || !data) return null; // violation d'unicité incluse : déjà claim
+  if (error) {
+    // 23505 = violation d'unicité : claim déjà pris, course normale.
+    if (error.code !== "23505") console.error("[email/log] claim", error.message);
+    return null;
+  }
+  if (!data) return null;
   return String(data.id);
 }
 

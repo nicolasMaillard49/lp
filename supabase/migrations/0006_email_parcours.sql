@@ -28,7 +28,7 @@ create index if not exists email_log_email_idx on public.email_log (email);
 -- Le verrou anti-double-relance : l'unicité est garantie PAR LA BASE,
 -- pas par le code (cron qui tourne deux fois, race, replay…).
 create unique index if not exists email_log_relance_unique
-  on public.email_log (email, kind)
+  on public.email_log (lower(email), kind)
   where kind in ('relance-j2', 'relance-j5');
 
 -- RLS deny-all (même politique que audit_leads / r2_responses /

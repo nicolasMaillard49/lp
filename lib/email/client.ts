@@ -27,6 +27,8 @@ export async function sendEmail(args: {
   to: string;
   subject: string;
   html: string;
+  /** URL de désinscription → en-têtes List-Unsubscribe (one-click Gmail/Yahoo). */
+  unsubUrl?: string;
 }): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -43,7 +45,17 @@ export async function sendEmail(args: {
         to: args.to,
         subject: args.subject,
         html: args.html,
+        ...(args.unsubUrl
+          ? {
+              headers: {
+                "List-Unsubscribe": `<${args.unsubUrl}>`,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+              },
+            }
+          : {}),
       }),
+      // Un Resend dégradé ne doit jamais épingler une route au-delà de 10 s.
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");

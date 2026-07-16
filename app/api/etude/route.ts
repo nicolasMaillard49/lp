@@ -1,6 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { sendEmail } from "@/lib/email/client";
+import { baseUrl } from "@/lib/email/layout";
 import { logEmail } from "@/lib/email/log";
 import { etudeEmail, isEtudeSnapshot } from "@/lib/email/templates/etude";
 
@@ -71,20 +72,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "db error" }, { status: 500 });
   }
 
-  /* Email #1 (étude ROI) — best-effort : un échec d'envoi ne doit
-     jamais transformer une capture réussie en erreur à l'écran. */
-  try {
-    if (isEtudeSnapshot(snapshot)) {
-      const { subject, html } = etudeEmail({
-        snapshot,
-        unsubToken: String(data.unsub_token),
-      });
-      const result = await sendEmail({ to: email, subject, html });
-      await logEmail({ email, kind: "etude", refId: String(data.id), result });
+  /* Email #1 (étude ROI) — best-effort ET hors du chemin de réponse :
+     after() envoie après que le prospect a reçu son { ok: true }. */
+  after(async () => {
+    try {
+      if (isEtudeSnapshot(snapshot)) {
+        const token = String(data.unsub_token);
+        const { subject, html } = etudeEmail({ snapshot, unsubToken: token });
+        const result = await sendEmail({
+          to: email,
+          subject,
+          html,
+          unsubUrl: `${baseUrl()}/api/unsub?t=${encodeURIComponent(token)}`,
+        });
+        await logEmail({ email, kind: "etude", refId: String(data.id), result });
+      }
+    } catch (e) {
+      console.error("[api/etude] email", e);
     }
-  } catch (e) {
-    console.error("[api/etude] email", e);
-  }
+  });
 
   return NextResponse.json({ ok: true, stored: true });
 }
