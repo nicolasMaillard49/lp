@@ -30,7 +30,9 @@ export function fmtEuro(n: number): string {
 
 /** Racine absolue du site pour les liens des emails. */
 export function baseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_BASE_URL) return process.env.NEXT_PUBLIC_APP_BASE_URL;
+  if (process.env.NEXT_PUBLIC_APP_BASE_URL) {
+    return process.env.NEXT_PUBLIC_APP_BASE_URL.replace(/\/$/, "");
+  }
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   }
@@ -44,12 +46,12 @@ export function row(label: string, valueHtml: string): string {
 
 /** CTA pleine largeur, bleu plein — même dominance que sur la LP. */
 export function button(href: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 4px;width:100%;"><tr><td align="center" style="background:${C.blue};"><a href="${href}" style="display:block;padding:14px 24px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">${esc(label)}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 4px;width:100%;"><tr><td align="center" style="background:${C.blue};"><a href="${esc(href)}" style="display:block;padding:14px 24px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">${esc(label)}</a></td></tr></table>`;
 }
 
 export function layout(args: { preheader: string; body: string; unsubUrl?: string }): string {
   const unsub = args.unsubUrl
-    ? ` · <a href="${args.unsubUrl}" style="color:${C.muted};">${esc(emails.footer.unsubLabel)}</a>`
+    ? ` · <a href="${esc(args.unsubUrl)}" style="color:${C.muted};">${esc(emails.footer.unsubLabel)}</a>`
     : "";
   return `<!doctype html>
 <html lang="fr">
