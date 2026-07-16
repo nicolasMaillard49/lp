@@ -10,6 +10,9 @@
 export const emails = {
   footer: {
     signature: "Nicolas Maillard — NMF Agence",
+    /** Adresse de contact : c'est ici qu'on répond à Nicolas. */
+    contact: "contact@nmf-agence.com",
+    repondre: "réponds directement à cet email, c'est moi qui lis.",
     mentions:
       "Tu reçois cet email parce que tu as laissé ton adresse sur bienvenue.nmf-agence.com.",
     unsubLabel: "Ne plus recevoir d'emails",

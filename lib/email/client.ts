@@ -21,7 +21,10 @@ export type SendResult =
   | { sent: true; providerId: string | null }
   | { sent: false; reason: string };
 
-const FROM_FALLBACK = "NMF Agence <noreply@nmf-agence.com>";
+const FROM_FALLBACK = "NMF Agence <contact@nmf-agence.com>";
+
+/** On répond à Nicolas, pas à un trou noir : jamais de noreply en Reply-To. */
+const REPLY_TO = "contact@nmf-agence.com";
 
 export async function sendEmail(args: {
   to: string;
@@ -42,6 +45,7 @@ export async function sendEmail(args: {
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: process.env.RESEND_FROM ?? FROM_FALLBACK,
+        reply_to: process.env.RESEND_REPLY_TO ?? REPLY_TO,
         to: args.to,
         subject: args.subject,
         html: args.html,

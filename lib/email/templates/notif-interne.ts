@@ -52,7 +52,7 @@ export function notifInterneEmail(args: { lead: Record<string, unknown> }): {
   }).join("");
 
   const body = `
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">${esc(t.intro)}</p>
+    <p style="margin:0 0 22px;font-size:16px;line-height:1.65;">${esc(t.intro)}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
     ${button(`${baseUrl()}/admin`, t.cta)}`;
 

@@ -41,7 +41,7 @@ export default function DevEmailsPage() {
           <iframe
             srcDoc={item.html}
             title={item.title}
-            style={{ width: "100%", height: 680, border: "1px solid #ddd", background: "#fff" }}
+            style={{ width: "100%", height: 900, border: "1px solid #ddd", background: "#fff" }}
           />
         </section>
       ))}

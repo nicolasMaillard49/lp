@@ -1,5 +1,5 @@
 import { emails } from "@/config/emails";
-import { C, baseUrl, button, esc, fmtEuro, layout, row } from "../layout";
+import { C, baseUrl, button, ctaNote, esc, fmtEuro, hero, layout, row } from "../layout";
 
 /* #1 — Étude ROI : le snapshot du simulateur mis en page façon
    document, envoyé immédiatement après la capture (/api/etude).
@@ -53,12 +53,16 @@ export function etudeEmail(args: {
 
   const roiTxt = s.roi.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
   const body = `
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">${esc(t.intro)}</p>
+    <p style="margin:0 0 22px;font-size:16px;line-height:1.65;">${esc(t.intro)}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
-    <p style="margin:20px 0 0;padding:16px;background:${C.panel};border:1px solid ${C.line};font-size:14px;">${esc(t.netLabel)} : <strong style="color:${C.blue};font-size:18px;">${esc(fmtEuro(s.net))}/mois</strong> — retour ×${esc(roiTxt)}</p>
-    <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:${C.muted};">${esc(t.note)}</p>
+    ${hero({
+      label: t.netLabel,
+      value: `${fmtEuro(s.net)}/mois`,
+      aside: `Retour ×${roiTxt} sur ce que tu investis.`,
+    })}
+    <p style="margin:18px 0 0;font-size:12px;line-height:1.65;color:${C.muted};">${esc(t.note)}</p>
     ${button(`${baseUrl()}/`, t.cta)}
-    <p style="margin:8px 0 0;text-align:center;font-size:11px;color:${C.muted};">${esc(t.ctaSub)}</p>`;
+    ${ctaNote(t.ctaSub)}`;
 
   return { subject, html: layout({ preheader: t.intro, body, unsubUrl }) };
 }

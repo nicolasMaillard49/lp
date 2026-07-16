@@ -1,5 +1,5 @@
 import { emails } from "@/config/emails";
-import { C, baseUrl, button, esc, fmtEuro, layout, row } from "../layout";
+import { C, baseUrl, button, ctaNote, esc, fmtEuro, layout, row } from "../layout";
 
 /* #4 et #5 — Relances envoyées par le cron quotidien à ceux qui ont
    laissé leur email sans compléter le formulaire. Snapshot depuis le
@@ -46,11 +46,11 @@ export function relanceJ2Email(args: { snapshot: LooseSnapshot; unsubToken: stri
   const subject =
     net !== null && net > 0 ? t.subjectAvecChiffre(fmtEuro(net)) : t.subjectSansChiffre;
   const body = `
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">${esc(t.intro)}</p>
+    <p style="margin:0 0 22px;font-size:16px;line-height:1.65;">${esc(t.intro)}</p>
     ${recapRows(args.snapshot)}
-    <p style="margin:16px 0 0;font-size:14px;line-height:1.7;">${esc(t.body)}</p>
+    <p style="margin:22px 0 0;font-size:16px;line-height:1.7;">${esc(t.body)}</p>
     ${button(`${baseUrl()}/`, t.cta)}
-    <p style="margin:8px 0 0;text-align:center;font-size:11px;color:${C.muted};">${esc(t.ctaSub)}</p>`;
+    ${ctaNote(t.ctaSub)}`;
   return {
     subject,
     html: layout({ preheader: t.intro, body, unsubUrl: unsubUrl(args.unsubToken) }),
@@ -66,11 +66,11 @@ export function relanceJ5Email(args: { snapshot: LooseSnapshot; unsubToken: stri
   const intro =
     net !== null && net > 0 ? t.introAvecChiffre(fmtEuro(net)) : t.introSansChiffre;
   const body = `
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;font-weight:bold;">${esc(intro)}</p>
-    <p style="margin:0;font-size:14px;line-height:1.7;">${esc(t.body)}</p>
-    <p style="margin:12px 0 0;font-size:14px;"><a href="${baseUrl()}/cout-de-lattente.pdf" style="color:${C.blue};font-weight:bold;">${esc(t.pdfLabel)}</a></p>
+    <p style="margin:0 0 16px;font-size:19px;line-height:1.45;font-weight:bold;">${esc(intro)}</p>
+    <p style="margin:0;font-size:16px;line-height:1.7;">${esc(t.body)}</p>
+    <p style="margin:16px 0 0;font-size:15px;"><a href="${esc(`${baseUrl()}/cout-de-lattente.pdf`)}" style="color:${C.blue};font-weight:bold;">${esc(t.pdfLabel)} →</a></p>
     ${button(`${baseUrl()}/`, t.cta)}
-    <p style="margin:8px 0 0;text-align:center;font-size:11px;color:${C.muted};">${esc(t.ctaSub)}</p>`;
+    ${ctaNote(t.ctaSub)}`;
   return {
     subject: t.subject,
     html: layout({ preheader: intro, body, unsubUrl: unsubUrl(args.unsubToken) }),
