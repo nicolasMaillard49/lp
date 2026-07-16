@@ -1,5 +1,5 @@
 import { emails } from "@/config/emails";
-import { baseUrl, button, ctaNote, esc, layout } from "../layout";
+import { baseUrl, button, ctaNote, layout, ouverture, para } from "../layout";
 
 /* #2 — Confirmation au prospect après le submit du formulaire.
    Part AVANT la réservation (« réserve ton créneau ») — Koalendar
@@ -12,10 +12,15 @@ export function confirmationEmail(args: { prenom: string | null }): {
 } {
   const t = emails.confirmation;
   const intro = t.intro(args.prenom);
+  /* Pas de chiffres ici : c'est un mot, pas un document. Ouverture en
+     display, une phrase, le créneau. */
   const body = `
-    <p style="margin:0 0 14px;font-size:19px;line-height:1.45;font-weight:bold;">${esc(intro)}</p>
-    <p style="margin:0;font-size:16px;line-height:1.7;">${esc(t.body)}</p>
+    ${ouverture(intro)}
+    ${para(t.body, 0)}
     ${button(`${baseUrl()}/bienvenue?reserver=1`, t.cta)}
     ${ctaNote(t.ctaSub)}`;
-  return { subject: t.subject, html: layout({ preheader: intro, body }) };
+  return {
+    subject: t.subject,
+    html: layout({ preheader: intro, objetLine: "Audit gratuit — 20 min", body }),
+  };
 }

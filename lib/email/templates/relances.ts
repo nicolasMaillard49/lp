@@ -1,5 +1,17 @@
 import { emails } from "@/config/emails";
-import { C, baseUrl, button, ctaNote, esc, fmtEuro, layout, row } from "../layout";
+import {
+  C,
+  baseUrl,
+  button,
+  ctaNote,
+  esc,
+  fmtEuro,
+  hero,
+  layout,
+  ouverture,
+  para,
+  row,
+} from "../layout";
 
 /* #4 et #5 — Relances envoyées par le cron quotidien à ceux qui ont
    laissé leur email sans compléter le formulaire. Snapshot depuis le
@@ -15,21 +27,24 @@ function str(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-/** Lignes de rappel des réglages — seulement ce qui existe dans le snapshot. */
+/** Ligne « objet » : ce que le snapshot sait de lui. */
+function objetLine(s: LooseSnapshot): string | undefined {
+  const parts = [str(s?.metier), str(s?.ville)].filter(Boolean);
+  return parts.length ? parts.join(" · ") : undefined;
+}
+
+/** Rappel des réglages — seulement ce qui existe dans le snapshot.
+    Métier/ville vivent dans la ligne « objet », pas ici. */
 function recapRows(s: LooseSnapshot): string {
   if (!s) return "";
-  const metier = str(s.metier);
-  const ville = str(s.ville);
   const budget = num(s.budget);
-  const net = num(s.net);
+  const ca = num(s.ca);
   const rows = [
-    metier ? row("Métier", esc(metier)) : "",
-    ville ? row("Ville", esc(ville)) : "",
     budget !== null ? row("Budget mensuel", esc(fmtEuro(budget))) : "",
-    net !== null ? row("Ce qui reste dans ta poche", esc(`${fmtEuro(net)}/mois`)) : "",
+    ca !== null ? row("CA estimé / mois", esc(fmtEuro(ca))) : "",
   ].join("");
   return rows
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px;">${rows}</table>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`
     : "";
 }
 
@@ -45,15 +60,27 @@ export function relanceJ2Email(args: { snapshot: LooseSnapshot; unsubToken: stri
   const net = num(args.snapshot?.net);
   const subject =
     net !== null && net > 0 ? t.subjectAvecChiffre(fmtEuro(net)) : t.subjectSansChiffre;
+  /* Le même document que son étude, en plus court — il l'a déjà vu :
+     on rejoue la ligne du bas, pas tout le devis. */
   const body = `
-    <p style="margin:0 0 22px;font-size:16px;line-height:1.65;">${esc(t.intro)}</p>
+    ${ouverture(t.intro)}
     ${recapRows(args.snapshot)}
-    <p style="margin:22px 0 0;font-size:16px;line-height:1.7;">${esc(t.body)}</p>
+    ${
+      net !== null && net > 0
+        ? hero({ label: emails.etude.netLabel, value: `${fmtEuro(net)} / mois` })
+        : ""
+    }
+    ${para(t.body, 22)}
     ${button(`${baseUrl()}/`, t.cta)}
     ${ctaNote(t.ctaSub)}`;
   return {
     subject,
-    html: layout({ preheader: t.intro, body, unsubUrl: unsubUrl(args.unsubToken) }),
+    html: layout({
+      preheader: t.intro,
+      objetLine: objetLine(args.snapshot),
+      body,
+      unsubUrl: unsubUrl(args.unsubToken),
+    }),
   };
 }
 
@@ -65,14 +92,20 @@ export function relanceJ5Email(args: { snapshot: LooseSnapshot; unsubToken: stri
   const net = num(args.snapshot?.net);
   const intro =
     net !== null && net > 0 ? t.introAvecChiffre(fmtEuro(net)) : t.introSansChiffre;
+  /* Pas de tableau ici : une seule idée, le temps qui passe. */
   const body = `
-    <p style="margin:0 0 16px;font-size:19px;line-height:1.45;font-weight:bold;">${esc(intro)}</p>
-    <p style="margin:0;font-size:16px;line-height:1.7;">${esc(t.body)}</p>
-    <p style="margin:16px 0 0;font-size:15px;"><a href="${esc(`${baseUrl()}/cout-de-lattente.pdf`)}" style="color:${C.blue};font-weight:bold;">${esc(t.pdfLabel)} →</a></p>
+    ${ouverture(intro)}
+    ${para(t.body, 0)}
+    <p style="margin:18px 0 0;font-family:'Courier New',Courier,monospace;font-size:14px;"><a href="${esc(`${baseUrl()}/cout-de-lattente.pdf`)}" style="color:${C.corailTexte};font-weight:bold;">${esc(t.pdfLabel)} →</a></p>
     ${button(`${baseUrl()}/`, t.cta)}
     ${ctaNote(t.ctaSub)}`;
   return {
     subject: t.subject,
-    html: layout({ preheader: intro, body, unsubUrl: unsubUrl(args.unsubToken) }),
+    html: layout({
+      preheader: intro,
+      objetLine: objetLine(args.snapshot),
+      body,
+      unsubUrl: unsubUrl(args.unsubToken),
+    }),
   };
 }

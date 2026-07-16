@@ -1,5 +1,5 @@
 import { emails } from "@/config/emails";
-import { baseUrl, button, esc, layout, row } from "../layout";
+import { baseUrl, button, esc, ficheRow, layout, ouverture } from "../layout";
 
 /* #3 — Notification interne vers NOTIF_EMAIL au submit du form :
    les réponses du lead, en clair, pour arrêter de surveiller
@@ -48,13 +48,22 @@ export function notifInterneEmail(args: { lead: Record<string, unknown> }): {
     const v = lead[key];
     if (v === null || v === undefined || v === "") return "";
     const text = typeof v === "boolean" ? (v ? "oui" : "non") : String(v);
-    return row(label, esc(text));
+    return ficheRow(label, esc(text));
   }).join("");
 
+  /* Destinataire : Nicolas. Une fiche, pas une vente — la conduite de
+     points fait tout le travail de lecture en diagonale. */
   const body = `
-    <p style="margin:0 0 22px;font-size:16px;line-height:1.65;">${esc(t.intro)}</p>
+    ${ouverture(t.intro)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
     ${button(`${baseUrl()}/admin`, t.cta)}`;
 
-  return { subject, html: layout({ preheader: subject, body }) };
+  return {
+    subject,
+    html: layout({
+      preheader: subject,
+      objetLine: `${str(lead.activite) ?? "?"} · ${str(lead.ville) ?? "?"}`,
+      body,
+    }),
+  };
 }

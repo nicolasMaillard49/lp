@@ -18,9 +18,9 @@ function page(title: string, bodyHtml: string): NextResponse {
   const html = `<!doctype html>
 <html lang="fr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title></head>
-<body style="margin:0;padding:48px 16px;background:${C.panel};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${C.ink};">
-  <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid ${C.line};padding:32px;">
-    <p style="margin:0 0 8px;font-size:11px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase;color:${C.muted};">NMF Agence</p>
+<body style="margin:0;padding:48px 16px;background:${C.marge};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${C.encre};">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid ${C.trait};padding:32px;">
+    <p style="margin:0 0 8px;font-size:11px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase;color:${C.gris};">NMF Agence</p>
     <h1 style="margin:0 0 16px;font-size:20px;">${esc(title)}</h1>
     ${bodyHtml}
   </div>
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     `<p style="margin:0 0 20px;font-size:14px;line-height:1.7;">Un clic et c'est réglé — tu ne recevras plus d'emails de notre part.</p>
      <form method="POST" action="/api/unsub">
        <input type="hidden" name="t" value="${esc(t)}">
-       <button type="submit" style="display:block;width:100%;padding:14px 24px;background:${C.blue};border:0;color:#fff;font-size:15px;font-weight:bold;cursor:pointer;">Me désabonner</button>
+       <button type="submit" style="display:block;width:100%;padding:14px 24px;background:${C.encre};border:0;color:#fff;font-size:15px;font-weight:bold;cursor:pointer;">Me désabonner</button>
      </form>`
   );
 }

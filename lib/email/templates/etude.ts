@@ -1,5 +1,5 @@
 import { emails } from "@/config/emails";
-import { C, baseUrl, button, ctaNote, esc, fmtEuro, hero, layout, row } from "../layout";
+import { C, baseUrl, button, ctaNote, esc, fmtEuro, hero, layout, ouverture, row } from "../layout";
 
 /* #1 — Étude ROI : le snapshot du simulateur mis en page façon
    document, envoyé immédiatement après la capture (/api/etude).
@@ -43,9 +43,10 @@ export function etudeEmail(args: {
   const subject = t.subject(s.metier, s.ville);
   const unsubUrl = `${baseUrl()}/api/unsub?t=${encodeURIComponent(args.unsubToken)}`;
 
+  /* L'ordre d'un devis : ce que tu mets, ce que ça produit, ce qu'il
+     reste. Métier et ville sont dans la ligne « objet » — les répéter
+     ici volerait des lignes aux chiffres. */
   const rows = [
-    row("Métier", esc(s.metier)),
-    row("Ville", esc(s.ville)),
     row("Budget mensuel (Ads + gestion)", esc(fmtEuro(s.budget))),
     row("Chantiers estimés / mois", esc(String(s.chantiers))),
     row("CA estimé / mois", esc(fmtEuro(s.ca))),
@@ -53,16 +54,24 @@ export function etudeEmail(args: {
 
   const roiTxt = s.roi.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
   const body = `
-    <p style="margin:0 0 22px;font-size:16px;line-height:1.65;">${esc(t.intro)}</p>
+    ${ouverture(t.intro)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
     ${hero({
       label: t.netLabel,
-      value: `${fmtEuro(s.net)}/mois`,
+      value: `${fmtEuro(s.net)} / mois`,
       aside: `Retour ×${roiTxt} sur ce que tu investis.`,
     })}
-    <p style="margin:18px 0 0;font-size:12px;line-height:1.65;color:${C.muted};">${esc(t.note)}</p>
+    <p style="margin:20px 0 0;font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.7;color:${C.gris};">${esc(t.note)}</p>
     ${button(`${baseUrl()}/`, t.cta)}
     ${ctaNote(t.ctaSub)}`;
 
-  return { subject, html: layout({ preheader: t.intro, body, unsubUrl }) };
+  return {
+    subject,
+    html: layout({
+      preheader: t.intro,
+      objetLine: `${s.metier} · ${s.ville}`,
+      body,
+      unsubUrl,
+    }),
+  };
 }
