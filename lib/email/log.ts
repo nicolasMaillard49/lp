@@ -10,7 +10,9 @@ import type { EmailKind, SendResult } from "./client";
      suivant. Le double envoi est impossible au niveau base.
    Un crash entre claim et settle laisse un claim orphelin (ok=false) ;
    le cron balaie ces orphelins de plus d'1 h au début de chaque run —
-   la relance est décalée d'un jour, jamais perdue ni doublée. */
+   la relance est décalée d'un jour, jamais perdue. (Cas limite
+   assumé : envoi réussi + settle en échec → renvoi le lendemain —
+   l'at-least-once est le bon compromis ici.) */
 
 export const EMAIL_LOG_TABLE = "email_log";
 

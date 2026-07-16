@@ -1,10 +1,22 @@
-import type { EtudeSnapshot } from "@/components/simulateur/EmailEtude";
 import { emails } from "@/config/emails";
 import { C, baseUrl, button, esc, fmtEuro, layout, row } from "../layout";
 
 /* #1 — Étude ROI : le snapshot du simulateur mis en page façon
    document, envoyé immédiatement après la capture (/api/etude).
    Fonction pure — aucun accès réseau/base. */
+
+/** Réglages du simulateur figés au moment de la capture.
+    Le type vit ici (côté serveur) ; le composant client EmailEtude
+    l'importe — jamais l'inverse. */
+export type EtudeSnapshot = {
+  metier: string;
+  ville: string;
+  budget: number;
+  net: number;
+  roi: number;
+  ca: number;
+  chantiers: number;
+};
 
 /** Le snapshot vient du jsonb (sanitizeSnapshot) : garde-fou avant d'envoyer. */
 export function isEtudeSnapshot(
