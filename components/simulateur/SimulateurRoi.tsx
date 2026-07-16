@@ -334,7 +334,13 @@ export function SimulateurRoi({
     setDate(new Date().toLocaleDateString("fr-FR"));
   }, []);
 
-  const lsa = Math.round((budget * partLsa) / 100);
+  /* Métier hors Local Services Ads en France → 100 % Google Ads. Le
+     LSA porte ~70 % des leads quand il est actif : le laisser tourner
+     pour une catégorie non ouverte inventerait la majeure partie du
+     résultat (Maçon : ×4,1 avec, ×1,3 sans). Le curseur disparaît —
+     un réglage qui ne s'applique pas n'a pas à être proposé. */
+  const lsaOuvert = metiers[metierIdx].lsa;
+  const lsa = lsaOuvert ? Math.round((budget * partLsa) / 100) : 0;
   const ads = budget - lsa;
   /* Une commune choisie dans la liste prime : on connaît sa population
      exacte, donc son marché. Sinon on retombe sur la table locale. */
@@ -573,6 +579,13 @@ export function SimulateurRoi({
             {s.estimatedNote}
           </p>
         )}
+        {/* Métier hors LSA : le chiffrage est 100 % Google Ads. Visible
+            sans clic — c'est ce qui explique l'écart avec un plombier. */}
+        {!metier.lsa && (
+          <p className="border-t border-sim-line px-5 py-2.5 text-[10px] leading-relaxed text-sim-muted print:hidden">
+            {s.lsaNote}
+          </p>
+        )}
 
         {/* Sur papier seulement : détail du calcul + cadrage COMPLET
             (texte, variables, sources) dans le PDF. */}
@@ -660,16 +673,18 @@ export function SimulateurRoi({
           <div className="border-t border-sim-line px-5 py-5">
             <p className="mb-5 text-[11px] text-sim-muted">{s.phrase.affinerAide}</p>
             <div className="grid gap-5 sm:grid-cols-2">
-              <Slider
-                label={s.params.repartition}
-                hint={s.params.repartitionHint}
-                value={partLsa}
-                display={`${partLsa} % · ${eur(lsa)}`}
-                min={0}
-                max={100}
-                step={5}
-                onChange={setPartLsa}
-              />
+              {lsaOuvert && (
+                <Slider
+                  label={s.params.repartition}
+                  hint={s.params.repartitionHint}
+                  value={partLsa}
+                  display={`${partLsa} % · ${eur(lsa)}`}
+                  min={0}
+                  max={100}
+                  step={5}
+                  onChange={setPartLsa}
+                />
+              )}
               <Slider
                 label={s.params.variantes}
                 hint={s.params.variantesHint}
@@ -825,6 +840,7 @@ function Honnetete({ s, metier }: { s: typeof simulateur; metier: Metier }) {
       <p className="mt-3 border-t border-sim-line pt-3 text-[10px] leading-relaxed text-sim-muted">
         {s.footnote}
         {metier.estimated ? ` ${s.estimatedNote}` : ""}
+        {!metier.lsa ? ` ${s.lsaNote}` : ""}
       </p>
     </>
   );

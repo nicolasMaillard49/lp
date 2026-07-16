@@ -69,6 +69,26 @@ export type Metier = {
    * le 2026-07-14 — le flag reste pour l'honnêteté de provenance.)
    */
   estimated?: boolean;
+  /**
+   * Catégorie ouverte au **Local Services Ads en France** (2026-07-16).
+   *
+   * C'est le champ le plus lourd du modèle : quand le LSA est actif il
+   * fournit ~70 % des leads (30 €/lead garanti contre ~72 € via les
+   * clics). L'accorder à un métier non éligible reviendrait à inventer
+   * la majorité du résultat — un plombier à Bordeaux passe de ×1,6 à
+   * ×0,9 (perte) selon que ce canal existe ou non.
+   *
+   * Règle appliquée : `true` **uniquement** pour les catégories
+   * explicitement sourcées (voir ci-dessous). Tout le reste reste en
+   * 100 % Google Ads. Le sens de l'erreur est délibéré : sous-promettre
+   * coûte une bonne surprise, sur-promettre coûte la crédibilité.
+   *
+   * ⚠️ Google refuse de publier une liste figée : « la couverture France
+   * est limitée et variable selon le métier et la zone ». À revérifier
+   * au vérificateur d'éligibilité (code postal + catégorie) :
+   * https://support.google.com/localservices/answer/6224841?co=GENIE.CountryCode%3DFR
+   */
+  lsa: boolean;
 };
 
 /* Ancrages des mesures de `taux` (population de bassin). */
@@ -308,6 +328,15 @@ export const simulateur = {
     erreur: "Ça n'est pas passé — vérifie ton email et réessaie.",
   },
 
+  /**
+   * Affiché quand le métier n'est pas ouvert au Local Services Ads en
+   * France (`lsa: false`) — le chiffrage est alors 100 % Google Ads.
+   * Le dire est un argument, pas un aveu : le prospect voit qu'on ne
+   * lui compte pas un canal auquel il n'a pas droit.
+   */
+  lsaNote:
+    "Pour ton métier, les Annonces Local Services de Google (les leads garantis en haut de page) ne sont pas ouvertes en France : ce chiffrage ne compte que du Google Ads classique. Les métiers qui y ont droit affichent mécaniquement mieux — on ne te compte pas un canal que tu ne peux pas activer.",
+
   /** Affiché quand le métier sélectionné a un CPC estimé (`estimated`). */
   estimatedNote:
     "Pour ton métier, le CPC est une estimation et non une moyenne mesurée — on l'affine avec tes vrais chiffres pendant l'appel.",
@@ -351,21 +380,30 @@ export const simulateur = {
    * ⚠️ « 10 » = plancher d'arrondi Google : les petits taux Brive
    * sont des bornes hautes. Prudent, donc acceptable.
    */
+  /*
+   * `lsa` — voir le champ sur le type `Metier`. `true` seulement pour
+   * les catégories explicitement sourcées côté France (plomberie,
+   * électricité, serrurerie, chauffage/HVAC, couverture, menuiserie,
+   * paysagisme, déménagement). Les 5 autres restent en 100 % Google
+   * Ads : « construction », « peinture », « revêtements de sol » ne
+   * sont pas confirmés ouverts en France, et un canal à 70 % des leads
+   * ne se présume pas.
+   */
   metiers: [
     // ── CPC : skill (validé par les enchères réelles le 2026-07-14) ──
-    { nom: "Plombier", cpc: 4.2, cpa: 30, panier: 500, transfo: 45, conv: 7.6, convSource: "Plumbing", taux: [4.0, 6.4], margeDefaut: 45 },
-    { nom: "Serrurier", cpc: 6.0, cpa: 35, panier: 300, transfo: 45, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [2.0, 17.5], margeDefaut: 50 },
-    { nom: "Chauffagiste", cpc: 5.0, cpa: 35, panier: 1500, transfo: 35, conv: 7.5, convSource: "Heating & Furnaces", taux: [6.9, 9.5], margeDefaut: 35 },
-    { nom: "Électricien", cpc: 3.5, cpa: 25, panier: 800, transfo: 40, conv: 9.1, convSource: "Electricians", taux: [5.0, 5.3], margeDefaut: 40 },
-    { nom: "Maçon", cpc: 2.8, cpa: 25, panier: 3500, transfo: 30, conv: 2.6, convSource: "Construction & Contractors", taux: [3.0, 3.5], margeDefaut: 25 },
-    { nom: "Peintre", cpc: 2.5, cpa: 20, panier: 2000, transfo: 30, conv: 10.8, convSource: "Paint & Painting", taux: [1.0, 0.7], margeDefaut: 35 },
-    { nom: "Menuisier", cpc: 2.2, cpa: 20, panier: 1800, transfo: 35, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [2.0, 3.5], margeDefaut: 35 },
-    { nom: "Carreleur", cpc: 2.0, cpa: 20, panier: 2500, transfo: 30, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [1.0, 1.0], margeDefaut: 30 },
-    { nom: "Paysagiste", cpc: 1.8, cpa: 20, panier: 1200, transfo: 35, conv: 6.4, convSource: "Landscaping", taux: [6.9, 6.4], margeDefaut: 40 },
-    { nom: "Déménageur", cpc: 3.0, cpa: 25, panier: 900, transfo: 35, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [1.0, 1.2], margeDefaut: 40 },
-    { nom: "Couvreur", cpc: 3.2, cpa: 30, panier: 6000, transfo: 30, conv: 3.7, convSource: "Roofing & Gutters", estimated: true, taux: [4.0, 3.5], margeDefaut: 30 },
-    { nom: "Plaquiste", cpc: 2.0, cpa: 20, panier: 2500, transfo: 30, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", estimated: true, taux: [1.0, 1.9], margeDefaut: 30 },
-    { nom: "Terrassier", cpc: 2.2, cpa: 25, panier: 4000, transfo: 30, conv: 2.6, convSource: "Construction & Contractors", estimated: true, taux: [1.0, 0.5], margeDefaut: 25 },
+    { nom: "Plombier", cpc: 4.2, cpa: 30, panier: 500, transfo: 45, conv: 7.6, convSource: "Plumbing", taux: [4.0, 6.4], margeDefaut: 45, lsa: true },
+    { nom: "Serrurier", cpc: 6.0, cpa: 35, panier: 300, transfo: 45, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [2.0, 17.5], margeDefaut: 50, lsa: true },
+    { nom: "Chauffagiste", cpc: 5.0, cpa: 35, panier: 1500, transfo: 35, conv: 7.5, convSource: "Heating & Furnaces", taux: [6.9, 9.5], margeDefaut: 35, lsa: true },
+    { nom: "Électricien", cpc: 3.5, cpa: 25, panier: 800, transfo: 40, conv: 9.1, convSource: "Electricians", taux: [5.0, 5.3], margeDefaut: 40, lsa: true },
+    { nom: "Maçon", cpc: 2.8, cpa: 25, panier: 3500, transfo: 30, conv: 2.6, convSource: "Construction & Contractors", taux: [3.0, 3.5], margeDefaut: 25, lsa: false },
+    { nom: "Peintre", cpc: 2.5, cpa: 20, panier: 2000, transfo: 30, conv: 10.8, convSource: "Paint & Painting", taux: [1.0, 0.7], margeDefaut: 35, lsa: false },
+    { nom: "Menuisier", cpc: 2.2, cpa: 20, panier: 1800, transfo: 35, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [2.0, 3.5], margeDefaut: 35, lsa: true },
+    { nom: "Carreleur", cpc: 2.0, cpa: 20, panier: 2500, transfo: 30, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [1.0, 1.0], margeDefaut: 30, lsa: false },
+    { nom: "Paysagiste", cpc: 1.8, cpa: 20, panier: 1200, transfo: 35, conv: 6.4, convSource: "Landscaping", taux: [6.9, 6.4], margeDefaut: 40, lsa: true },
+    { nom: "Déménageur", cpc: 3.0, cpa: 25, panier: 900, transfo: 35, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", taux: [1.0, 1.2], margeDefaut: 40, lsa: true },
+    { nom: "Couvreur", cpc: 3.2, cpa: 30, panier: 6000, transfo: 30, conv: 3.7, convSource: "Roofing & Gutters", estimated: true, taux: [4.0, 3.5], margeDefaut: 30, lsa: true },
+    { nom: "Plaquiste", cpc: 2.0, cpa: 20, panier: 2500, transfo: 30, conv: CONV_DEFAUT, convSource: "Home Services (moyenne — pas de catégorie dédiée)", estimated: true, taux: [1.0, 1.9], margeDefaut: 30, lsa: false },
+    { nom: "Terrassier", cpc: 2.2, cpa: 25, panier: 4000, transfo: 30, conv: 2.6, convSource: "Construction & Contractors", estimated: true, taux: [1.0, 0.5], margeDefaut: 25, lsa: false },
   ] satisfies Metier[],
 } as const;
 
