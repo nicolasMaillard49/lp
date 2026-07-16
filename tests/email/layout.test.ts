@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { esc, fmtEuro, layout } from "@/lib/email/layout";
+import { bandeau, big, esc, fmtEuro, layout } from "@/lib/email/layout";
 
 describe("esc", () => {
   it("échappe le HTML injecté", () => {
@@ -17,17 +17,35 @@ describe("fmtEuro", () => {
   });
 });
 
+describe("bandeau", () => {
+  it("porte le titre et garde un repli solide pour Outlook", () => {
+    const html = bandeau("Il te reste " + big("892 €"), "Plombier à Bordeaux");
+    expect(html).toContain("892 €");
+    expect(html).toContain("Plombier à Bordeaux");
+    // bgcolor = ce que voit Outlook, qui ignore linear-gradient
+    expect(html).toContain('bgcolor="#FF7149"');
+    expect(html).toContain("linear-gradient");
+  });
+
+  it("échappe le sous-titre", () => {
+    expect(bandeau("x", `<script>y</script>`)).toContain("&lt;script&gt;");
+  });
+});
+
 describe("layout", () => {
-  it("enveloppe le corps, footer sans désinscription par défaut", () => {
-    const html = layout({ preheader: "Aperçu", body: "<p>CORPS</p>" });
+  it("enveloppe bandeau et corps, footer sans désinscription par défaut", () => {
+    const html = layout({ preheader: "Aperçu", bande: "<tr><td>BANDE</td></tr>", body: "<p>CORPS</p>" });
+    expect(html).toContain("BANDE");
     expect(html).toContain("<p>CORPS</p>");
     expect(html).toContain("NMF Agence");
+    expect(html).toContain("contact@nmf-agence.com");
     expect(html).not.toContain("Ne plus recevoir");
   });
 
   it("ajoute le lien de désinscription quand une URL est fournie", () => {
     const html = layout({
       preheader: "Aperçu",
+      bande: "",
       body: "<p>x</p>",
       unsubUrl: "https://exemple.fr/api/unsub?t=abc",
     });

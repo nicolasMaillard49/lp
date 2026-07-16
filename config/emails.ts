@@ -15,14 +15,20 @@ export const emails = {
     repondre: "réponds directement à cet email, c'est moi qui lis.",
     mentions:
       "Tu reçois cet email parce que tu as laissé ton adresse sur bienvenue.nmf-agence.com.",
+    /** Les emails internes ne se justifient pas auprès de leur destinataire. */
+    mentionsInterne: "Notification interne — envoyée à chaque formulaire complété.",
     unsubLabel: "Ne plus recevoir d'emails",
   },
 
   /** #1 — Étude ROI, envoyée immédiatement après la capture. */
   etude: {
     subject: (metier: string, ville: string) => `Ton étude Google Ads — ${metier} à ${ville}`,
+    /** Bandeau : le chiffre vit dans la phrase, `{net}` y est agrandi. */
+    bandeauAvant: "Chaque mois, il te resterait",
+    bandeauApres: "dans la poche.",
+    bandeauSub: (metier: string, ville: string) =>
+      `${metier} à ${ville} — voici d'où sort ce chiffre.`,
     intro: "Comme promis, voici ton étude — tes réglages, tes chiffres.",
-    netLabel: "Ce qui reste dans ta poche",
     note: "Une projection, pas une promesse : ni un plancher, ni un plafond. On l'affine avec tes vrais chiffres pendant l'audit.",
     cta: "Recevoir mon audit gratuit",
     ctaSub: "10 questions · 2 minutes · Sans engagement",
@@ -31,8 +37,9 @@ export const emails = {
   /** #2 — Confirmation au prospect, au submit du formulaire. */
   confirmation: {
     subject: "C'est noté — ton audit est en préparation",
-    intro: (prenom: string | null) =>
-      prenom ? `${prenom}, tes réponses sont bien arrivées.` : "Tes réponses sont bien arrivées.",
+    bandeau: (prenom: string | null) =>
+      prenom ? `${prenom}, c'est noté.` : "C'est noté.",
+    bandeauSub: "Tes réponses sont arrivées. Il reste une étape.",
     body: "J'analyse ton activité et ta zone avant notre échange. Il ne reste qu'une chose à faire : réserver ton créneau, si ce n'est pas déjà fait.",
     cta: "Réserver mon créneau",
     ctaSub: "20 minutes · Gratuit · Sans engagement",
@@ -42,7 +49,9 @@ export const emails = {
   notif: {
     subject: (nom: string, activite: string, ville: string) =>
       `Nouveau lead — ${nom} (${activite} · ${ville})`,
-    intro: "Nouveau formulaire complété sur la LP.",
+    bandeau: (nom: string) => `Nouveau lead : ${nom}`,
+    bandeauSub: (activite: string, ville: string) => `${activite} · ${ville} — formulaire complété.`,
+    intro: "Ses réponses, dans l'ordre du formulaire.",
     cta: "Ouvrir le dashboard",
   },
 
@@ -50,8 +59,11 @@ export const emails = {
   relanceJ2: {
     subjectAvecChiffre: (net: string) => `${net} par mois — ton étude t'attend`,
     subjectSansChiffre: "Ton étude Google Ads t'attend",
-    intro: "Il y a deux jours, tu as fait ton étude sur le simulateur. Elle en était là :",
-    body: "Ces chiffres ne bougeront pas tout seuls. La prochaine étape tient en 10 questions.",
+    bandeauAvant: "Ton étude t'attend toujours :",
+    bandeauApres: "par mois.",
+    bandeauSansChiffre: "Ton étude Google Ads t'attend toujours.",
+    bandeauSub: "Tu l'as faite il y a deux jours. Les chiffres n'ont pas bougé.",
+    body: "Ces chiffres ne bougeront pas tout seuls. La prochaine étape tient en 10 questions — deux minutes, et je te dis ce que ça donne vraiment pour ta zone.",
     cta: "Recevoir mon audit gratuit",
     ctaSub: "10 questions · 2 minutes · Sans engagement",
   },
@@ -59,6 +71,10 @@ export const emails = {
   /** #5 — Relance J+5 : le coût de l'attente (matière du PDF R2). */
   relanceJ5: {
     subject: "Le coût de l'attente",
+    bandeauAvant: "Chaque mois sans campagne, ce sont",
+    bandeauApres: "qui ne rentrent pas.",
+    bandeauSansChiffre: "Chaque mois sans campagne, c'est de la marge qui ne rentre pas.",
+    bandeauSub: "Ce n'est pas une urgence inventée : c'est ton propre calcul, dans le temps.",
     introAvecChiffre: (net: string) =>
       `Chaque mois qui passe sans campagne, c'est environ ${net} de marge qui ne rentre pas.`,
     introSansChiffre: "Chaque mois qui passe sans campagne, c'est de la marge qui ne rentre pas.",

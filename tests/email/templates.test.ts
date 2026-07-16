@@ -53,13 +53,14 @@ describe("confirmationEmail", () => {
   it("personnalise avec le prénom", () => {
     const { subject, html } = confirmationEmail({ prenom: "Karim" });
     expect(subject).toBe("C'est noté — ton audit est en préparation");
-    expect(html).toContain("Karim, tes réponses sont bien arrivées.");
+    expect(html).toContain("Karim, c'est noté.");
     expect(html).toContain("/bienvenue?reserver=1");
   });
 
   it("fallback sans prénom", () => {
     const { html } = confirmationEmail({ prenom: null });
-    expect(html).toContain("Tes réponses sont bien arrivées.");
+    expect(html).toContain("C'est noté.");
+    expect(html).not.toContain("null");
   });
 });
 

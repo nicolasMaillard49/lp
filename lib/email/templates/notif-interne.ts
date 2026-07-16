@@ -1,5 +1,5 @@
 import { emails } from "@/config/emails";
-import { baseUrl, button, esc, ficheRow, layout, ouverture } from "../layout";
+import { bandeau, baseUrl, button, esc, ficheRow, layout, para } from "../layout";
 
 /* #3 — Notification interne vers NOTIF_EMAIL au submit du form :
    les réponses du lead, en clair, pour arrêter de surveiller
@@ -51,19 +51,23 @@ export function notifInterneEmail(args: { lead: Record<string, unknown> }): {
     return ficheRow(label, esc(text));
   }).join("");
 
-  /* Destinataire : Nicolas. Une fiche, pas une vente — la conduite de
-     points fait tout le travail de lecture en diagonale. */
+  /* Destinataire : Nicolas. Une fiche à lire en diagonale, pas une
+     vente — mais même bandeau : le nom du lead saute aux yeux. */
   const body = `
-    ${ouverture(t.intro)}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+    ${para(t.intro, 0)}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 0;">${rows}</table>
     ${button(`${baseUrl()}/admin`, t.cta)}`;
 
   return {
     subject,
     html: layout({
       preheader: subject,
-      objetLine: `${str(lead.activite) ?? "?"} · ${str(lead.ville) ?? "?"}`,
+      bande: bandeau(
+        esc(t.bandeau(str(lead.nom_prenom) ?? "—")),
+        t.bandeauSub(str(lead.activite) ?? "?", str(lead.ville) ?? "?")
+      ),
       body,
+      interne: true,
     }),
   };
 }

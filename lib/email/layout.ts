@@ -1,47 +1,51 @@
 import { emails } from "@/config/emails";
 
 /* ──────────────────────────────────────────────────────────────
-   Coquille des emails — le devis inversé.
+   Coquille des emails — « golden hour ».
 
-   Le lecteur est un artisan. L'objet central de sa vie pro, c'est le
-   DEVIS : il en écrit tous les jours, il le lit d'un coup d'œil, il
-   sait où regarder (la ligne du bas). Le simulateur a déjà été bâti
-   comme ça — « l'outil ne doit pas lire comme la LP, il doit lire
-   comme un document d'estimation ». L'email prolonge ce document.
+   Deux directions ont échoué avant celle-ci, et pour la même raison :
+   palette timide. Le transactionnel blanc/bleu était générique ; le
+   devis Courier/gris tombait pile dans la voie saturée « display serif
+   + libellés mono + filets + monochrome ». Safe = invisible.
 
-   La bascule : un devis annonce ce que ça COÛTE. Celui-ci annonce ce
-   que ça RAPPORTE — même mise en page, même conduite de points, même
-   filet double avant le total, mais un + à la place du −. C'est tout
-   le funnel en une ligne de typo.
+   Ici la couleur EST la voix : le dégradé du logo (corail → ambre)
+   prend un tiers de la surface et porte le message. Le texte dessus
+   est en ENCRE, pas en blanc — le blanc sur ce corail plafonne à
+   2,7:1 (illisible), l'encre donne 6,6:1. Bonus : ça évite le
+   blanc-sur-dégradé, réflexe SaaS par défaut.
 
-   Contraintes du média : tables + styles inline (le CSS moderne saute),
-   polices système uniquement (Gmail retire @font-face), images
-   absolues (voir assetUrl).
+   Une seule famille (Helvetica), jouée en contraste de graisse et
+   d'échelle : en email les polices web sautent (Gmail retire
+   @font-face), donc un duo display/corps serait un pari — le contraste
+   d'échelle, lui, tient partout.
+
+   Contraintes du média : tables + styles inline, images absolues
+   (assetUrl), et le dégradé en background-image avec repli bgcolor
+   solide pour Outlook.
    ────────────────────────────────────────────────────────────── */
 
-/** Corail relevé du logo déployé (#FF6E67/#FF7149) ; `corailTexte` en
-    est la version qui passe le contraste sur blanc. */
+/** Relevé au pixel sur le logo déployé (#FF6E67 / #FF7149), étendu
+    vers l'ambre de la LP. `encre` sur ce dégradé : 6,6:1. */
 export const C = {
+  corail: "#FF6D77",
+  orange: "#FF7149",
+  ambre: "#FFA043",
   encre: "#16151A",
-  papier: "#FFFFFF",
-  /** Le bureau autour du document — gris tiède, surtout pas crème. */
-  marge: "#EEEDEA",
-  trait: "#DDDBD6",
-  /** Les points de conduite : assez présents pour guider l'œil du
-      libellé au chiffre, assez discrets pour rester du papier. */
-  pointille: "#B2AEA6",
-  gris: "#6E6B65",
-  corail: "#FF6E67",
+  /** Second niveau sur blanc — 5,9:1, jamais du gris clair « élégant ». */
+  gris: "#5F5A56",
+  blanc: "#FFFFFF",
+  /** Le pourtour, teinté vers la marque (surtout pas un crème neutre). */
+  fond: "#FCF1EF",
+  trait: "#EFE7E4",
+  /** Corail assez foncé pour du texte sur blanc — 4,6:1. */
   corailTexte: "#D33A32",
 } as const;
 
-const F = {
-  /** Georgia = le tenant-lieu système de Fraunces, la display du site. */
-  display: "Georgia, 'Times New Roman', serif",
-  corps: "-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif",
-  /** La machine à écrire du devis : références, libellés, chiffres. */
-  machine: "'Courier New', Courier, monospace",
-} as const;
+/** Une seule famille : le contraste vient de la graisse et de l'échelle. */
+const SANS = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+/** Le dégradé de marque + son repli solide pour Outlook. */
+const DEGRADE = `background:${C.orange};background-image:linear-gradient(135deg, ${C.corail} 0%, ${C.orange} 52%, ${C.ambre} 100%);`;
 
 export function esc(s: string): string {
   return s
@@ -79,117 +83,109 @@ export function assetUrl(path: string): string {
   return `${base}${path}`;
 }
 
-/** Ligne « objet » du document, sous l'en-tête. */
-export function objet(text: string): string {
-  return `<tr><td style="padding:13px 32px;background:${C.marge};border-bottom:1px solid ${C.trait};font-family:${F.machine};font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:${C.gris};">${esc(text)}</td></tr>`;
+/**
+ * Le bandeau de marque — le seul endroit où l'email hausse la voix.
+ * Il porte LE message de l'email, et rien d'autre. Le chiffre vit dans
+ * la phrase (`big()`), pas dans une carte de statistique.
+ */
+export function bandeau(titleHtml: string, sub?: string): string {
+  const subHtml = sub
+    ? `<div style="margin-top:12px;font-family:${SANS};font-size:15px;line-height:1.55;font-weight:500;color:${C.encre};">${esc(sub)}</div>`
+    : "";
+  return `<tr><td bgcolor="${C.orange}" style="${DEGRADE}padding:36px 36px 38px;">
+    <div style="font-family:${SANS};font-size:27px;line-height:1.3;font-weight:bold;letter-spacing:-0.02em;color:${C.encre};">${titleHtml}</div>
+    ${subHtml}
+  </td></tr>`;
 }
 
-/**
- * Ligne de devis à conduite de points : libellé …… valeur.
- * La cellule du milieu porte les points ; les deux autres se règlent
- * sur leur contenu. `valueHtml` est déjà échappé par l'appelant.
- */
+/** Le chiffre, agrandi DANS la phrase du bandeau — pas isolé dans un encart. */
+export function big(value: string): string {
+  return `<span style="font-size:46px;letter-spacing:-0.035em;">${esc(value)}</span>`;
+}
+
+/** Ligne de chiffres : libellé à gauche, valeur à droite, un filet dessous. */
 export function row(label: string, valueHtml: string): string {
   return `<tr>
-    <td style="padding:9px 0 5px;font-family:${F.machine};font-size:13px;color:${C.gris};white-space:nowrap;">${esc(label)}</td>
-    <td style="padding:9px 7px 4px;border-bottom:2px dotted ${C.pointille};width:100%;">&nbsp;</td>
-    <td align="right" style="padding:9px 0 5px;font-family:${F.machine};font-size:14px;font-weight:bold;color:${C.encre};white-space:nowrap;">${valueHtml}</td>
+    <td style="padding:13px 12px 13px 0;border-bottom:1px solid ${C.trait};font-family:${SANS};font-size:15px;color:${C.gris};">${esc(label)}</td>
+    <td align="right" style="padding:13px 0;border-bottom:1px solid ${C.trait};font-family:${SANS};font-size:16px;font-weight:bold;color:${C.encre};white-space:nowrap;">${valueHtml}</td>
   </tr>`;
 }
 
 /**
- * Ligne de fiche — pour la notif interne : libellé à gauche, valeur
- * qui s'enroule à droite. La conduite de points de `row()` est réservée
- * au devis (montants courts) ; ici les valeurs sont du texte libre et
- * `nowrap` ferait déborder le document.
+ * Ligne de fiche (notif interne) : la valeur est du texte libre et doit
+ * pouvoir s'enrouler — `row()` la garderait sur une ligne et ferait
+ * déborder le document.
  */
 export function ficheRow(label: string, valueHtml: string): string {
   return `<tr>
-    <td width="150" style="width:150px;padding:10px 14px 10px 0;border-bottom:1px solid ${C.trait};font-family:${F.machine};font-size:12px;color:${C.gris};vertical-align:top;">${esc(label)}</td>
-    <td style="padding:10px 0;border-bottom:1px solid ${C.trait};font-family:${F.corps};font-size:14px;line-height:1.5;color:${C.encre};vertical-align:top;">${valueHtml}</td>
+    <td width="150" style="width:150px;padding:11px 14px 11px 0;border-bottom:1px solid ${C.trait};font-family:${SANS};font-size:13px;color:${C.gris};vertical-align:top;">${esc(label)}</td>
+    <td style="padding:11px 0;border-bottom:1px solid ${C.trait};font-family:${SANS};font-size:15px;line-height:1.5;color:${C.encre};vertical-align:top;">${valueHtml}</td>
   </tr>`;
 }
 
-/**
- * Le total inversé — la signature du parcours. Filet double comme sur
- * un devis, libellé en capitales, puis le chiffre : un + et du corail
- * là où l'artisan a l'habitude de lire un montant à payer.
- */
-export function hero(args: { label: string; value: string; aside?: string }): string {
-  const aside = args.aside
-    ? `<div style="margin-top:9px;font-family:${F.machine};font-size:12px;color:${C.gris};">${esc(args.aside)}</div>`
-    : "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 0;"><tr>
-    <td style="border-top:3px double ${C.encre};padding:18px 0 0;">
-      <div style="font-family:${F.machine};font-size:12px;font-weight:bold;letter-spacing:0.1em;text-transform:uppercase;color:${C.gris};">${esc(args.label)}</div>
-      <div style="margin-top:6px;font-family:${F.display};font-size:38px;line-height:1.05;font-weight:bold;color:${C.encre};"><span style="color:${C.corailTexte};">+&nbsp;</span>${esc(args.value)}</div>
-      ${aside}
-    </td>
-  </tr></table>`;
-}
-
-/** CTA pleine largeur. Encre, pas corail : la couleur appartient au
-    chiffre. Padding porté par le <td> — Outlook ignore celui d'un <a>. */
+/** CTA pleine largeur. Encre sur blanc : le corail a déjà tout le bandeau.
+    Padding porté par le <td> — Outlook ignore celui d'un <a>. */
 export function button(href: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 0;width:100%;"><tr><td align="center" bgcolor="${C.encre}" style="background:${C.encre};padding:16px 24px;"><a href="${esc(href)}" style="display:block;font-family:${F.corps};color:#ffffff;font-size:16px;font-weight:bold;letter-spacing:0.01em;text-decoration:none;">${esc(label)}</a></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:30px 0 0;width:100%;"><tr><td align="center" bgcolor="${C.encre}" style="background:${C.encre};padding:17px 24px;border-radius:6px;"><a href="${esc(href)}" style="display:block;font-family:${SANS};color:#ffffff;font-size:16px;font-weight:bold;text-decoration:none;">${esc(label)}</a></td></tr></table>`;
 }
 
 /** Réassurance sous le CTA. */
 export function ctaNote(text: string): string {
-  return `<p style="margin:11px 0 0;text-align:center;font-family:${F.machine};font-size:12px;color:${C.gris};">${esc(text)}</p>`;
-}
-
-/** Phrase d'ouverture — la seule ligne en display. */
-export function ouverture(text: string): string {
-  return `<p style="margin:0 0 22px;font-family:${F.display};font-size:23px;line-height:1.35;color:${C.encre};">${esc(text)}</p>`;
+  return `<p style="margin:12px 0 0;text-align:center;font-family:${SANS};font-size:13px;color:${C.gris};">${esc(text)}</p>`;
 }
 
 /** Paragraphe de corps. */
-export function para(text: string, marginTop = 16): string {
-  return `<p style="margin:${marginTop}px 0 0;font-family:${F.corps};font-size:15px;line-height:1.7;color:${C.encre};">${esc(text)}</p>`;
+export function para(text: string, marginTop = 18): string {
+  return `<p style="margin:${marginTop}px 0 0;font-family:${SANS};font-size:16px;line-height:1.65;color:${C.encre};">${esc(text)}</p>`;
+}
+
+/** Mention discrète (projection, avertissement). */
+export function mention(text: string): string {
+  return `<p style="margin:20px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:${C.gris};">${esc(text)}</p>`;
 }
 
 export function layout(args: {
   preheader: string;
+  /** Le bandeau de marque, construit par `bandeau()`. */
+  bande: string;
   body: string;
-  /** Ligne « objet » du document (métier · ville…). */
-  objetLine?: string;
   unsubUrl?: string;
+  /** Email destiné à NMF : ni justification de réception, ni désinscription. */
+  interne?: boolean;
 }): string {
   const f = emails.footer;
   const unsub = args.unsubUrl
     ? `<br><a href="${esc(args.unsubUrl)}" style="color:${C.gris};text-decoration:underline;">${esc(f.unsubLabel)}</a>`
     : "";
+  const mentions = args.interne ? f.mentionsInterne : f.mentions;
   return `<!doctype html>
 <html lang="fr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light only"></head>
-<body style="margin:0;padding:0;background:${C.marge};">
+<body style="margin:0;padding:0;background:${C.fond};">
   <!-- Preheader : la ligne d'aperçu dans la liste des mails. Le filler
        empêche le client d'y coller le début du corps. -->
   <div style="display:none;max-height:0;overflow:hidden;">${esc(args.preheader)}</div>
   <div style="display:none;max-height:0;overflow:hidden;">&#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847;</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.marge};padding:36px 12px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.fond};padding:32px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${C.papier};border:1px solid ${C.trait};color:${C.encre};">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${C.blanc};border-radius:14px;overflow:hidden;">
 
-        <!-- En-tête du document -->
-        <tr><td style="padding:26px 32px 22px;">
+        <!-- En-tête blanc : le logo est corail, il lui faut du clair. -->
+        <tr><td style="padding:24px 36px 22px;">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-            <td style="padding-right:12px;vertical-align:middle;"><img src="${esc(assetUrl("/logo-nmf-96.png"))}" width="36" height="36" alt="NMF Agence" style="display:block;width:36px;height:36px;border:0;"></td>
-            <td style="vertical-align:middle;">
-              <div style="font-family:${F.display};font-size:19px;font-weight:bold;line-height:1.15;color:${C.encre};">NMF Agence</div>
-              <div style="font-family:${F.machine};font-size:11px;letter-spacing:0.05em;color:${C.gris};">Agence web · Bordeaux</div>
-            </td>
+            <td style="padding-right:11px;vertical-align:middle;"><img src="${esc(assetUrl("/logo-nmf-96.png"))}" width="30" height="30" alt="NMF Agence" style="display:block;width:30px;height:30px;border:0;"></td>
+            <td style="vertical-align:middle;font-family:${SANS};font-size:17px;font-weight:bold;letter-spacing:-0.01em;color:${C.encre};">NMF Agence</td>
           </tr></table>
         </td></tr>
-        ${args.objetLine ? objet(args.objetLine) : `<tr><td style="border-bottom:1px solid ${C.trait};font-size:0;line-height:0;">&nbsp;</td></tr>`}
 
-        <tr><td style="padding:32px;">${args.body}</td></tr>
+        ${args.bande}
 
-        <tr><td style="padding:20px 32px 26px;border-top:1px solid ${C.trait};background:${C.marge};font-family:${F.machine};font-size:11px;line-height:1.75;color:${C.gris};">
+        <tr><td style="padding:32px 36px 36px;">${args.body}</td></tr>
+
+        <tr><td style="padding:22px 36px 26px;border-top:1px solid ${C.trait};font-family:${SANS};font-size:13px;line-height:1.7;color:${C.gris};">
           <strong style="color:${C.encre};">${esc(f.signature)}</strong><br>
-          <a href="mailto:${esc(f.contact)}" style="color:${C.corailTexte};text-decoration:none;">${esc(f.contact)}</a> — ${esc(f.repondre)}<br>
-          ${esc(f.mentions)}${unsub}
+          <a href="mailto:${esc(f.contact)}" style="color:${C.corailTexte};text-decoration:none;font-weight:bold;">${esc(f.contact)}</a> — ${esc(f.repondre)}<br>
+          <span style="font-size:12px;">${esc(mentions)}${unsub}</span>
         </td></tr>
 
       </table>

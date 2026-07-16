@@ -18,7 +18,7 @@ function page(title: string, bodyHtml: string): NextResponse {
   const html = `<!doctype html>
 <html lang="fr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title></head>
-<body style="margin:0;padding:48px 16px;background:${C.marge};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${C.encre};">
+<body style="margin:0;padding:48px 16px;background:${C.fond};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${C.encre};">
   <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid ${C.trait};padding:32px;">
     <p style="margin:0 0 8px;font-size:11px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase;color:${C.gris};">NMF Agence</p>
     <h1 style="margin:0 0 16px;font-size:20px;">${esc(title)}</h1>
