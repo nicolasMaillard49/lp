@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { etudeEmail, isEtudeSnapshot } from "@/lib/email/templates/etude";
 import { confirmationEmail } from "@/lib/email/templates/confirmation";
 import { notifInterneEmail } from "@/lib/email/templates/notif-interne";
+import { relanceJ2Email, relanceJ5Email } from "@/lib/email/templates/relances";
 
 const SNAPSHOT = {
   metier: "Plombier",
@@ -87,5 +88,48 @@ describe("notifInterneEmail", () => {
   it("sujet dégradé quand activité/ville manquent", () => {
     const { subject } = notifInterneEmail({ lead: { nom_prenom: "Test" } });
     expect(subject).toBe("Nouveau lead — Test (? · ?)");
+  });
+});
+
+const SNAP_LOOSE: Record<string, unknown> = {
+  metier: "Plombier",
+  ville: "Bordeaux",
+  budget: 1500,
+  net: 892,
+  roi: 1.6,
+  ca: 4460,
+  chantiers: 6,
+};
+
+describe("relanceJ2Email", () => {
+  it("net positif → sujet avec le chiffre", () => {
+    const { subject, html } = relanceJ2Email({ snapshot: SNAP_LOOSE, unsubToken: "tok-2" });
+    expect(subject).toMatch(/^892 € par mois — ton étude t'attend$/u);
+    expect(html).toContain("Plombier");
+    expect(html).toContain("/api/unsub?t=tok-2");
+  });
+
+  it("net négatif ou snapshot nul → sujet générique", () => {
+    expect(relanceJ2Email({ snapshot: { ...SNAP_LOOSE, net: -143 }, unsubToken: "t" }).subject).toBe(
+      "Ton étude Google Ads t'attend"
+    );
+    expect(relanceJ2Email({ snapshot: null, unsubToken: "t" }).subject).toBe(
+      "Ton étude Google Ads t'attend"
+    );
+  });
+});
+
+describe("relanceJ5Email", () => {
+  it("intro avec chiffre + lien PDF + unsub", () => {
+    const { subject, html } = relanceJ5Email({ snapshot: SNAP_LOOSE, unsubToken: "tok-5" });
+    expect(subject).toBe("Le coût de l'attente");
+    expect(html).toMatch(/892\s?€/u);
+    expect(html).toContain("/cout-de-lattente.pdf");
+    expect(html).toContain("/api/unsub?t=tok-5");
+  });
+
+  it("sans chiffre exploitable → intro générique", () => {
+    const { html } = relanceJ5Email({ snapshot: null, unsubToken: "t" });
+    expect(html).toContain("c'est de la marge qui ne rentre pas");
   });
 });
