@@ -2,6 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabase, AUDIT_TABLE } from "@/lib/supabase";
 import { readRequestContext, sanitizeAttribution } from "@/lib/tracking";
 import { steps, TOTAL_STEPS } from "@/config/form";
+import { sendEmail } from "@/lib/email/client";
+import { logEmail } from "@/lib/email/log";
+import { confirmationEmail } from "@/lib/email/templates/confirmation";
+import { notifInterneEmail } from "@/lib/email/templates/notif-interne";
 
 export const runtime = "nodejs";
 
@@ -128,6 +132,39 @@ export async function POST(req: NextRequest) {
     .from(AUDIT_TABLE)
     .upsert(payload, { onConflict: "session_id" });
   if (error) return fail(error.message);
+
+  /* Emails #2 (confirmation prospect) + #3 (notif interne) au submit —
+     best-effort : ne modifient jamais la réponse HTTP. */
+  if (event === "submit") {
+    try {
+      const { data: lead } = await supabase
+        .from(AUDIT_TABLE)
+        .select("*")
+        .eq("session_id", session_id)
+        .single();
+      if (lead) {
+        const leadId = typeof lead.id === "string" ? lead.id : null;
+        const to = typeof lead.email === "string" ? lead.email.trim().toLowerCase() : "";
+        if (to.includes("@")) {
+          const prenom =
+            typeof lead.nom_prenom === "string" && lead.nom_prenom.trim()
+              ? lead.nom_prenom.trim().split(/\s+/)[0]
+              : null;
+          const conf = confirmationEmail({ prenom });
+          const result = await sendEmail({ to, subject: conf.subject, html: conf.html });
+          await logEmail({ email: to, kind: "confirmation", refId: leadId, result });
+        }
+        const notifTo = process.env.NOTIF_EMAIL;
+        if (notifTo) {
+          const notif = notifInterneEmail({ lead });
+          const result = await sendEmail({ to: notifTo, subject: notif.subject, html: notif.html });
+          await logEmail({ email: notifTo, kind: "notif-interne", refId: leadId, result });
+        }
+      }
+    } catch (e) {
+      console.error("[api/audit] email", e);
+    }
+  }
 
   return NextResponse.json({ ok: true, stored: true });
 }
