@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   form,
@@ -35,6 +35,31 @@ function stashContact(answers: Record<string, unknown>) {
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/* ── Reprise de session ──────────────────────────────────────────
+   Les réponses partent bien à Supabase en continu (useAuditSession),
+   mais côté client une fermeture d'onglet à la question 6 remettait le
+   visiteur à zéro — la vraie cause d'abandon. On garde donc un brouillon
+   en localStorage pour le faire reprendre exactement où il en était. */
+
+/** Brouillon du form (réponses + position). Purgé au submit réussi. */
+export const DRAFT_KEY = "nmf_form_draft";
+/** Snapshot du simulateur, écrit par AcquisitionLp — purgé ici aussi au
+    submit : c'est le form qui sait quand le parcours est terminé. */
+export const SNAP_KEY = "nmf_sim_snap";
+/** Au-delà de 7 jours, le contexte (et l'intention) est périmé. */
+export const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+type Draft = {
+  ts: number;
+  /** Signature du parcours (clés de `known` triées) : un brouillon LP
+      (questions sautées grâce au simulateur) ne doit pas se réhydrater
+      sur /audit et inversement — les index ne pointeraient plus sur les
+      mêmes questions. */
+  known: string;
+  answers: Record<string, unknown>;
+  index: number;
+};
 
 /** Ce que le simulateur a déjà appris — réaffiché pendant tout le form. */
 export type Recap = {
@@ -98,6 +123,56 @@ export function AuditForm({
   const [submitting, setSubmitting] = useState(false);
   const [direction, setDirection] = useState(1);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [resumed, setResumed] = useState(false);
+
+  const knownSig = useMemo(() => Object.keys(known).sort().join(), [known]);
+
+  /* Restauration APRÈS mount (useEffect), jamais dans l'init d'état :
+     lire localStorage pendant le rendu casserait l'hydratation SSR
+     (HTML serveur ≠ premier rendu client). */
+  const restoredOnce = useRef(false);
+  useEffect(() => {
+    if (restoredOnce.current) return;
+    restoredOnce.current = true;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as Partial<Draft>;
+      const fresh =
+        typeof draft.ts === "number" && Date.now() - draft.ts < DRAFT_TTL_MS;
+      if (
+        fresh &&
+        draft.known === knownSig &&
+        draft.answers &&
+        typeof draft.answers === "object" &&
+        typeof draft.index === "number"
+      ) {
+        setAnswers(draft.answers);
+        /* Clamp : si la config des questions a changé entre-temps, on
+           retombe au pire sur la dernière question, jamais hors limites. */
+        setIndex(Math.min(Math.max(draft.index, 0), total - 1));
+        setResumed(true);
+      }
+    } catch {
+      /* localStorage indisponible (navigation privée…) → comportement
+         actuel, le form démarre à zéro. Jamais bloquant. */
+    }
+  }, [knownSig, total]);
+
+  /* Persistance CONTINUE, pas seulement au unload : sur mobile l'onglet
+     est souvent tué sans aucun événement. Tant que rien n'a été répondu,
+     on n'écrit rien (et on ne clobbe pas un éventuel brouillon d'un
+     autre parcours au premier rendu). */
+  useEffect(() => {
+    if (done) return;
+    if (index === 0 && Object.keys(answers).length === 0) return;
+    try {
+      const draft: Draft = { ts: Date.now(), known: knownSig, answers, index };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      /* silencieux — la sauvegarde est un bonus, pas une dépendance */
+    }
+  }, [answers, index, done, knownSig]);
 
   const step = steps[index];
   const isLast = index === total - 1;
@@ -132,6 +207,15 @@ export function AuditForm({
            dépendance à un outil tiers pour la conversion. */
         fbTrack("SubmitApplication");
         stashContact(payload);
+        /* Parcours terminé : brouillon et snapshot simulateur n'ont plus
+           de raison d'exister — sinon un prochain passage « reprendrait »
+           un form déjà soumis. */
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+          localStorage.removeItem(SNAP_KEY);
+        } catch {
+          /* silencieux */
+        }
         setDone(true);
         /* Le lead est en base ; le créneau se choisit sur /bienvenue en
            variante booking (`?reserver=1` : Koalendar intégré + prénom,
@@ -162,6 +246,22 @@ export function AuditForm({
     setIndex((i) => Math.max(0, i - 1));
   }, []);
 
+  /* « Recommencer » après une reprise : purge le brouillon et repart de
+     la première question. Le snapshot simulateur, lui, reste — refaire
+     les questions ne veut pas dire refaire le simulateur. */
+  const restart = useCallback(() => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* silencieux */
+    }
+    setAnswers({});
+    setError(null);
+    setDirection(-1);
+    setIndex(0);
+    setResumed(false);
+  }, []);
+
   const value = answers[step.key];
   const isEmptyOptional =
     !step.required &&
@@ -189,6 +289,13 @@ export function AuditForm({
         </div>
 
         {!done && <ProgressBar current={index + 1} total={total} />}
+
+        {/* Annonce de l'engagement — sur la première question : ensuite,
+            la barre de progression prend le relais. Le compte vient de
+            `total` : 10 sur le parcours LP, 13 sur /audit. */}
+        {!done && index === 0 && (
+          <p className="mt-3 text-sm text-muted">{form.intro(total)}</p>
+        )}
 
         {/* Ce qu'on sait déjà — montré, pas sauté en silence : sinon
             l'artisan ne perçoit pas qu'on a retenu ses réponses. */}
@@ -245,7 +352,25 @@ export function AuditForm({
         {done ? (
           <DoneScreen reduce={!!reduce} />
         ) : (
-          <AnimatePresence mode="wait" custom={direction}>
+          <>
+            {/* Reprise de session — dit explicitement qu'on a gardé ses
+                réponses (sinon il croit repartir de zéro et abandonne),
+                avec une porte de sortie s'il préfère tout refaire. */}
+            {resumed && (
+              <div className="mb-6 flex items-center gap-3 rounded-lg border border-border bg-surface px-3.5 py-2.5 text-xs text-muted">
+                <p className="min-w-0 flex-1">
+                  Reprise là où tu t&apos;étais arrêté.
+                </p>
+                <button
+                  type="button"
+                  onClick={restart}
+                  className="shrink-0 font-semibold text-primary underline-offset-2 hover:underline"
+                >
+                  Recommencer
+                </button>
+              </div>
+            )}
+            <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={index}
               custom={direction}
@@ -314,7 +439,8 @@ export function AuditForm({
                 )}
               </div>
             </motion.div>
-          </AnimatePresence>
+            </AnimatePresence>
+          </>
         )}
       </div>
 

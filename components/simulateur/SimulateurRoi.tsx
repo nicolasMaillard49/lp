@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { EmailEtude } from "@/components/simulateur/EmailEtude";
+import { fbTrackCustom } from "@/lib/fpixel";
 import {
   bassinPour,
   simulateur,
@@ -314,8 +316,10 @@ export function SimulateurRoi({
   };
   /* `total` = ce qu'il sort de sa poche, forfait de gestion COMPRIS.
      Le budget publicité s'en déduit. La répartition Ads/LSA est un
-     arbitrage d'agence, pas une question à poser d'entrée : Affiner. */
-  const [total, setTotal] = useState(1100);
+     arbitrage d'agence, pas une question à poser d'entrée : Affiner.
+     La valeur d'ouverture est un réglage marketing → config, à côté
+     de `gestionFixe` dont elle dépend. */
+  const [total, setTotal] = useState<number>(s.budgetDefautTotal);
   const [partLsa, setPartLsa] = useState(50);
   const nmf = s.gestionFixe;
   const budget = Math.max(0, total - nmf);
@@ -369,12 +373,38 @@ export function SimulateurRoi({
      reconnaît comme « ce que ça me rapporte ». */
   const net = r.marge - r.total;
   const verdict = perte
-    ? s.verdicts.loss(eur(r.total), roiTxt)
+    ? s.verdicts.loss
     : r.roi < 1.5
-      ? s.verdicts.low(eur(r.marge), eur(r.total), roiTxt)
+      ? s.verdicts.low
       : r.roi < 3
-        ? s.verdicts.mid(eur(r.marge), eur(r.total), roiTxt)
-        : s.verdicts.high(eur(r.marge), eur(r.total), roiTxt);
+        ? s.verdicts.mid(roiTxt)
+        : s.verdicts.high(roiTxt);
+
+  /* Retargeting Meta « SimulateurResultat » — alimente les audiences de
+     relance personnalisée (« Tes X €/mois t'attendent »). Débouncé
+     ~2,5 s après le DERNIER changement de réglage : on capture l'état
+     stabilisé, pas chaque cran de curseur. L'état initial part aussi
+     (un visiteur qui regarde sans toucher est retargetable), mais un
+     état identique n'est jamais renvoyé (comparaison sur le payload). */
+  const lastResultatSent = useRef<string | null>(null);
+  const villeResultat = match.commune?.[0] ?? ville.trim();
+  useEffect(() => {
+    const payload = {
+      metier: metier.nom,
+      ville: villeResultat,
+      budget_total: total,
+      net_mensuel: Math.round(net),
+      roi: +r.roi.toFixed(1),
+      verdict: perte ? "perte" : r.roi < 1.5 ? "equilibre" : "rentable",
+    };
+    const key = JSON.stringify(payload);
+    if (key === lastResultatSent.current) return;
+    const timer = setTimeout(() => {
+      lastResultatSent.current = key;
+      fbTrackCustom("SimulateurResultat", payload);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [metier.nom, villeResultat, total, net, r.roi, perte]);
 
   const foldCls =
     "border border-sim-line [&[open]]:bg-sim-panel print:hidden";
@@ -503,54 +533,67 @@ export function SimulateurRoi({
         </div>
 
         <div className="grid grid-cols-2 border-t border-sim-line">
-          <div className="border-r border-sim-line px-5 py-4">
-            <p className={LABEL}>{s.kpis.chantiers}</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{dec(r.chantiers)}</p>
+          <div className="flex items-center gap-3 border-r border-sim-line px-5 py-4">
+            {/* Icônes plutôt que du texte (épure 2026-07-15) — trait fin,
+                bleu action, cohérent avec le style document. */}
+            <svg viewBox="0 0 24 24" className="size-7 shrink-0 text-sim-blue" fill="none" aria-hidden>
+              <path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div>
+              <p className={LABEL}>{s.kpis.chantiers}</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums">{dec(r.chantiers)}</p>
+            </div>
           </div>
-          <div className="px-5 py-4">
-            <p className={LABEL}>{s.kpis.ca}</p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{eur(r.ca)}</p>
+          <div className="flex items-center gap-3 px-5 py-4">
+            <svg viewBox="0 0 24 24" className="size-7 shrink-0 text-sim-blue" fill="none" aria-hidden>
+              <path d="M17 7a6.5 6.5 0 1 0 0 10M5 10.5h8M5 13.5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <div>
+              <p className={LABEL}>{s.kpis.ca}</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums">{eur(r.ca)}</p>
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-sim-line bg-sim-panel px-5 py-3">
-          <p className="text-xs font-bold">{s.hypothese.titre}</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-sim-muted">
-            {s.hypothese.texte}
+        {/* L'honnêteté tient en UNE ligne, et cette ligne EST le pli qui
+            l'ouvre — une seule occurrence cliquable, une seule source
+            (<Honnetete/>), partagée avec le PDF. */}
+        <details className="border-t border-sim-line print:hidden">
+          <summary className="cursor-pointer select-none px-5 py-2.5 text-[11px] font-semibold text-sim-muted marker:text-sim-blue">
+            {s.hypothese.titre}
+          </summary>
+          <div className="px-5 pb-3">
+            <Honnetete s={s} metier={metier} />
+          </div>
+        </details>
+        {/* CPC estimé (pas mesuré) : la mention reste visible SANS clic —
+            l'honnêteté sur un chiffre incertain n'est pas opt-in. */}
+        {metier.estimated && (
+          <p className="border-t border-sim-line px-5 py-2.5 text-[10px] leading-relaxed text-sim-muted print:hidden">
+            {s.estimatedNote}
           </p>
-          <ul className="mt-2 grid gap-x-6 gap-y-1 sm:grid-cols-2">
-            {s.hypothese.variables.map((v) => (
-              <li key={v} className="flex gap-1.5 text-[11px] leading-snug text-sim-muted">
-                <span aria-hidden className="text-sim-blue">
-                  —
-                </span>
-                <span>{v}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
 
-        {/* Sur papier seulement : le détail doit être dans le PDF. */}
+        {/* Sur papier seulement : détail du calcul + cadrage COMPLET
+            (texte, variables, sources) dans le PDF. */}
         <div className="hidden px-5 py-3 print:block">
           <Detail s={s} r={r} metier={metier} ads={ads} lsa={lsa} />
+          <p className="mt-3 text-xs font-bold">{s.hypothese.titre}</p>
+          <div className="mt-1">
+            <Honnetete s={s} metier={metier} />
+          </div>
         </div>
-
-        <p className="border-t border-sim-line px-5 py-3 text-[10px] leading-relaxed text-sim-muted">
-          {s.footnote}
-          {metier.estimated ? ` ${s.estimatedNote}` : ""}
-        </p>
       </section>
 
       {/* ── Actions ── */}
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row print:hidden">
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="h-11 flex-1 border border-sim-ink bg-white px-6 text-sm font-bold text-sim-ink transition-colors hover:bg-sim-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sim-blue"
-        >
-          {s.exportPdf}
-        </button>
-        {onContinue && (
+      {/* UNE action, pas deux : le CTA de conversion est le seul bouton —
+          pleine largeur, gros, avec sa réassurance. L'export PDF descend
+          au rang de lien texte : il sert APRÈS la décision, pas à sa
+          place, et deux boutons de même poids diluaient le funnel.
+          Sans `onContinue` (page /simulateur), l'export redevient le
+          seul bouton visible. */}
+      {onContinue ? (
+        <div className="mt-5 print:hidden">
           <button
             type="button"
             onClick={() =>
@@ -568,12 +611,40 @@ export function SimulateurRoi({
                 roi: r.roi,
               })
             }
-            className="h-11 flex-1 bg-sim-blue px-6 text-sm font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sim-blue"
+            className="flex min-h-16 w-full items-center justify-center gap-3 bg-sim-blue px-6 py-5 text-xl font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sim-blue sm:text-2xl"
           >
-            {ctaLabel ?? s.cta}
+            <span>{ctaLabel ?? s.cta}</span>
+            <span aria-hidden>→</span>
           </button>
-        )}
-      </div>
+          <p className="mt-2.5 text-center text-xs font-semibold uppercase tracking-[0.12em] text-sim-muted">
+            {s.ctaReassurance}
+          </p>
+          <p className="mt-4 text-center">
+            <ExportPdf s={s} asLink />
+          </p>
+          {/* Le filet : capture email APRÈS le CTA, discret — il récupère
+              ceux qui ne cliqueront pas, il ne détourne pas les autres.
+              LP uniquement : sur /simulateur standalone, pas de funnel à
+              rattraper. */}
+          <div className="mt-6">
+            <EmailEtude
+              snapshot={{
+                metier: metier.nom,
+                ville: match.commune?.[0] ?? ville.trim(),
+                budget: total,
+                net: Math.round(net),
+                roi: +r.roi.toFixed(1),
+                ca: Math.round(r.ca),
+                chantiers: +r.chantiers.toFixed(1),
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="mt-5 print:hidden">
+          <ExportPdf s={s} />
+        </div>
+      )}
 
       {/* ── Tout le reste est replié : présent, mais pas dans les pattes ── */}
       <div className="mt-5 flex flex-col gap-px">
@@ -728,6 +799,51 @@ export function SimulateurRoi({
         </details>
       </div>
     </div>
+  );
+}
+
+/**
+ * Le cadrage d'honnêteté (texte + variables + sources) — UNE source pour
+ * l'écran (pli du document) et le PDF : deux copies divergeaient déjà.
+ */
+function Honnetete({ s, metier }: { s: typeof simulateur; metier: Metier }) {
+  return (
+    <>
+      <p className="text-[11px] leading-relaxed text-sim-muted">
+        {s.hypothese.texte}
+      </p>
+      <ul className="mt-2 grid gap-x-6 gap-y-1 sm:grid-cols-2">
+        {s.hypothese.variables.map((v) => (
+          <li key={v} className="flex gap-1.5 text-[11px] leading-snug text-sim-muted">
+            <span aria-hidden className="text-sim-blue">
+              —
+            </span>
+            <span>{v}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 border-t border-sim-line pt-3 text-[10px] leading-relaxed text-sim-muted">
+        {s.footnote}
+        {metier.estimated ? ` ${s.estimatedNote}` : ""}
+      </p>
+    </>
+  );
+}
+
+/** Export PDF — un seul handler/libellé, deux habits (lien ou bouton). */
+function ExportPdf({ s, asLink = false }: { s: typeof simulateur; asLink?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.print()}
+      className={
+        asLink
+          ? "text-xs font-semibold text-sim-muted underline underline-offset-4 transition-colors hover:text-sim-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sim-blue"
+          : "h-11 w-full border border-sim-ink bg-white px-6 text-sm font-bold text-sim-ink transition-colors hover:bg-sim-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sim-blue"
+      }
+    >
+      {s.exportPdf}
+    </button>
   );
 }
 

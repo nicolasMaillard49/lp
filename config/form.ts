@@ -16,7 +16,13 @@ import { site } from "./site";
 
 export const form = {
   title: "Formulaire de diagnostic",
-  intro: "Obtiens un audit gratuit de ta situation. Ça prend 2 minutes.",
+  /* Affiché sur le 1ᵉʳ écran — le prospect sait dans quoi il s'engage.
+     Le compte est CALCULÉ par l'appelant : la longueur du form dépend du
+     parcours (10 questions sur la LP où le simulateur a déjà répondu à
+     3, 13 en accès direct /audit). Un « 10 » codé en dur mentait sur
+     /audit, sous une barre de progression affichant 13. */
+  intro: (questions: number) =>
+    `${questions} questions, 2 minutes — ton audit gratuit à la clé.`,
   submitLabel: "Recevoir mon audit",
   /** Redirection après soumission. */
   redirectTo: "/bienvenue",

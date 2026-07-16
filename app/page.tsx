@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { AcquisitionLp } from "@/components/lp/AcquisitionLp";
 import { LpHero } from "@/components/lp/LpHero";
-import { Marquee } from "@/components/Marquee";
 import { Method } from "@/components/Method";
 import { Proof } from "@/components/Proof";
 import { Footer } from "@/components/Footer";
@@ -22,16 +21,14 @@ export const metadata: Metadata = {
 /**
  * `/` = LP d'acquisition (atterrissage des ads).
  * Le formulaire seul vit sur `/audit` pour les prospects chauds.
+ * Épure 2026-07-15 : le simulateur EST la page — un titre court
+ * au-dessus, zéro distraction (la marquee métiers est partie), les
+ * preuves restent sous le pli.
  */
 export default function Home() {
   return (
     <AcquisitionLp
-      before={
-        <>
-          <LpHero />
-          <Marquee />
-        </>
-      }
+      before={<LpHero />}
       after={
         <>
           <Proof />

@@ -44,10 +44,18 @@ export const site = {
   lp: {
     eyebrow: "Artisans du bâtiment",
     title: "Combien de chantiers tu laisses à ton concurrent chaque mois ?",
+    /* Une seule ligne, mais avec le BÉNÉFICE dedans (audit marketing
+       2026-07-15) : « le calcul » tout seul ne disait pas de quoi. */
     subtitle:
-      "Règle les curseurs avec tes vrais chiffres — ton métier, ta ville, ton budget. Tu vois ce que la publicité Google peut te rapporter. Pas de promesse en l'air : ton calcul, sous tes yeux, en 2 minutes.",
+      "Ce que Google Ads peut te rapporter — ton calcul, sous tes yeux, en 2 minutes.",
     reassurance: "Gratuit · Sans inscription · Aucun engagement",
-    cta: "On en parle 20 minutes ?",
+    /* Seule preuve au-dessus du pli — un artisan méfiant a besoin d'un
+       signal de confiance AVANT le simulateur. Source : PDF ressource. */
+    proof: "Campagnes notées 93–97/100 par Google",
+    /* Le clic ouvre le formulaire d'audit, pas un appel : le bouton
+       annonce ce qui se passe vraiment (« On en parle 20 minutes ? »
+       promettait un créneau et livrait 10 questions). */
+    cta: "Recevoir mon audit gratuit",
   },
 
   /* Hero par DÉFAUT de /bienvenue — le visiteur a DÉJÀ son rendez-vous
@@ -63,13 +71,16 @@ export const site = {
 
   /* Variante FUNNEL ADS (/bienvenue?reserver=1) — il sort du form, rien
      n'est réservé : l'action n°1 est le créneau (section #reserver).
-     `{prenom}` dans le subtitle est remplacé côté client (sessionStorage,
-     posé par AuditForm au submit) — vide si inconnu. */
+     Le prénom (sessionStorage, posé par AuditForm au submit) s'affiche
+     dans le TITRE via `titlePrenom` — dans le sous-titre gris il passait
+     inaperçu. `title` reste la version générique (prénom inconnu). */
   heroFunnel: {
     badge: "Dernière étape",
     title: "Attention : sans créneau réservé, il n'y a pas de rendez-vous.",
+    titlePrenom:
+      "{prenom}, sans créneau réservé, il n'y a pas de rendez-vous.",
     subtitle:
-      "{prenom}ton diagnostic est bien enregistré — mais RIEN n'est réservé. Choisis ton créneau ci-dessous, maintenant. Ensuite, suis les 4 étapes pour que nos 20 minutes valent vraiment le coup.",
+      "Ton diagnostic est bien enregistré — mais RIEN n'est réservé. Choisis ton créneau ci-dessous, maintenant. Ensuite, suis les 4 étapes pour que nos 20 minutes valent vraiment le coup.",
     ctaPrimary: "Choisir mon créneau",
     ctaHref: "#reserver",
   },

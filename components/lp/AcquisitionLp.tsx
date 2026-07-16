@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { site } from "@/config/site";
-import { AuditForm } from "@/components/form/AuditForm";
+import { simulateur } from "@/config/simulateur";
+import {
+  AuditForm,
+  DRAFT_KEY,
+  DRAFT_TTL_MS,
+  SNAP_KEY,
+} from "@/components/form/AuditForm";
 import {
   SimulateurRoi,
   type SimSnapshot,
@@ -32,13 +38,57 @@ export function AcquisitionLp({
 }) {
   const [snap, setSnap] = useState<SimSnapshot | null>(null);
 
+  /* Reprise de session : si le visiteur avait quitté EN PLEIN form (un
+     snap ET un brouillon de réponses existent), on le remet directement
+     sur le form — AuditForm réhydrate ses réponses tout seul. Un snap
+     sans brouillon (form jamais commencé) ne suffit pas : il repasse par
+     le simulateur, comportement actuel. Lecture après mount uniquement,
+     lire localStorage pendant le rendu casserait l'hydratation SSR. */
+  useEffect(() => {
+    try {
+      const rawSnap = localStorage.getItem(SNAP_KEY);
+      const rawDraft = localStorage.getItem(DRAFT_KEY);
+      if (!rawSnap || !rawDraft) return;
+      const stored = JSON.parse(rawSnap) as { ts?: number; snap?: SimSnapshot };
+      const draft = JSON.parse(rawDraft) as { ts?: number };
+      const fresh = (ts?: number) =>
+        typeof ts === "number" && Date.now() - ts < DRAFT_TTL_MS;
+      if (fresh(stored.ts) && fresh(draft.ts) && stored.snap) {
+        /* setSnap direct, sans repasser par start() : un simple retour
+           d'onglet ne doit pas re-déclencher InitiateCheckout. */
+        setSnap(stored.snap);
+      }
+    } catch {
+      /* localStorage indisponible → parcours normal, jamais bloquant */
+    }
+  }, []);
+
   const start = useCallback((s: SimSnapshot) => {
     setSnap(s);
-    /* Intention réelle, pas une vue de page : Meta peut optimiser dessus. */
+    /* Snapshot persisté pour la reprise de session : si l'onglet se ferme
+       en plein form, le prochain passage ré-affiche directement le form.
+       AuditForm purge cette clé (avec son brouillon) au submit réussi. */
+    try {
+      localStorage.setItem(SNAP_KEY, JSON.stringify({ ts: Date.now(), snap: s }));
+    } catch {
+      /* silencieux */
+    }
+    /* Intention réelle, pas une vue de page : Meta peut optimiser dessus.
+       Les custom_data alimentent des audiences de relance « au chiffre
+       près » : des ads de retargeting qui affichent le chiffre personnel
+       du prospect (son net mensuel, son ROI, sa ville), pas un slogan
+       générique. */
     fbTrack("InitiateCheckout", {
-      content_name: s.metier,
+      content_name: `${s.metier} · ${s.ville}`,
       value: Math.round(s.ca),
       currency: "EUR",
+      /* Net en poche = budget total (gestion comprise) × (ROI − 1) —
+         `snap.budget` est le budget pub SANS le forfait de gestion. */
+      net_mensuel: Math.round((s.budget + simulateur.gestionFixe) * (s.roi - 1)),
+      roi: +s.roi.toFixed(1),
+      budget_total: s.budget + simulateur.gestionFixe,
+      ville: s.ville,
+      metier: s.metier,
     });
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);

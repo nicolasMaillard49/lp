@@ -245,15 +245,16 @@ export const simulateur = {
    * de rentable une perte sèche pour un artisan à 25 % de marge, qui a
    * besoin de ×4 sur le CA rien que pour l'équilibre.
    */
+  /* UNE phrase par verdict (épure 2026-07-15) : la ligne netDetail fait
+     déjà le calcul juste au-dessus — le verdict ne le répète plus. Les
+     signatures ne mentent pas : seuls high/mid consomment le ROI, les
+     deux autres sont des constantes. */
   verdicts: {
-    high: (marge: string, total: string, roi: string) =>
-      `Très rentable — ${total} investis, ${marge} de marge estimée, soit ×${roi} sur ce que tu mets. Et chaque client satisfait en amène d'autres.`,
-    mid: (marge: string, total: string, roi: string) =>
-      `Rentable — ${marge} de marge pour ${total} investis (×${roi}). La récurrence client (réachat, urgences répétées) s'ajoute encore au calcul.`,
-    low: (marge: string, total: string, roi: string) =>
-      `Tout juste à l'équilibre — ${marge} de marge pour ${total} investis (×${roi}). À ce niveau tu travailles pour payer ta pub. Le levier n'est pas le budget : c'est le panier, le canal, ou la vitesse de rappel.`,
-    loss: (total: string, roi: string) =>
-      `Tu perds de l'argent — ${total} investis ne reviennent pas (×${roi} sur ta marge). Sur ce métier, à ce budget, Google Ads n'est pas le bon canal : on en parle, il y a mieux à faire.`,
+    high: (roi: string) => `Très rentable — ×${roi} sur ce que tu mets.`,
+    mid: (roi: string) =>
+      `Rentable — ×${roi} sur ce que tu mets, hors récurrence client.`,
+    low: "Tout juste à l'équilibre — tu travailles pour payer ta pub.",
+    loss: "À ce budget, Google Ads n'est pas le bon canal — on en parle.",
   },
 
   comparatif: {
@@ -266,10 +267,9 @@ export const simulateur = {
     "Taux de conversion : médianes LocaliQ / WordStream 2025 (3 211 campagnes Home Services). Données américaines — le meilleur repère public disponible, aucun équivalent français rigoureux n'existe. CPC : moyennes France, à affiner. Les vrais chiffres se mesurent après 2 mois de campagne, avec un suivi des appels indépendant.",
 
   /**
-   * Avertissement affiché EN HAUT du document, pas en bas.
-   * Un devis chiffré au centime donne l'illusion de la certitude : sans
-   * ce cadrage, l'artisan lit l'estimation comme un plancher garanti
-   * (« au minimum je ferai ça »). Ce n'en est pas un.
+   * Avertissement — depuis l'épure 2026-07-15 il vit REPLIÉ (details)
+   * avec les sources : une ligne dans le document suffit à l'honnêteté,
+   * le pavé de texte faisait fuir avant le CTA.
    */
   hypothese: {
     titre: "Une projection, pas une promesse.",
@@ -287,7 +287,26 @@ export const simulateur = {
 
   /** CTA sous les résultats — LP uniquement (absent sur /simulateur). */
   cta: "Voir ce que ça donne chez toi",
+  /** Réassurance sous le CTA — pas de compte de questions ici : la
+      longueur du form est dynamique, seul le form la connaît (il
+      l'affiche sur son 1ᵉʳ écran). Une promesse chiffrée fausse au
+      moment de bâtir la confiance coûte plus qu'elle ne rapporte. */
+  ctaReassurance: "2 minutes · Sans engagement",
   exportPdf: "Exporter en PDF",
+
+  /**
+   * Capture email sous le simulateur (LP uniquement) — le filet sous le
+   * funnel : un abandon après le résultat n'est plus un prospect perdu.
+   * « arrive par email » est honnête : pas de provider branché, Nicolas
+   * envoie l'étude à la main dans un premier temps (voir /api/etude).
+   */
+  etude: {
+    titre: "Garde ton étude",
+    placeholder: "ton@email.fr",
+    bouton: "Recevoir par email",
+    merci: "C'est noté — ton étude arrive par email.",
+    erreur: "Ça n'est pas passé — vérifie ton email et réessaie.",
+  },
 
   /** Affiché quand le métier sélectionné a un CPC estimé (`estimated`). */
   estimatedNote:
@@ -295,6 +314,16 @@ export const simulateur = {
 
   /** Forfait gestion NMF (€/mois) — valeur fixe, non réglable par le visiteur. */
   gestionFixe: 500,
+
+  /**
+   * Budget total d'OUVERTURE du simulateur (€/mois, gestion comprise) —
+   * réglage MARKETING, couplé à `gestionFixe` : le scénario par défaut
+   * (Plombier · Bordeaux) doit ouvrir sur un verdict « Rentable »
+   * crédible (audit 2026-07-15 : à 1 100 €, la page ouvrait sur « tout
+   * juste à l'équilibre » pour 100 % des visiteurs). Si `gestionFixe`
+   * bouge, re-vérifier le verdict d'ouverture.
+   */
+  budgetDefautTotal: 1500,
 
   /** Multiplicateurs — skill google-ads-artisans. */
   zones: [

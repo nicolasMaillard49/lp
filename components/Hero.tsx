@@ -42,11 +42,17 @@ export function Hero({
     }
   }, [variant]);
 
-  const subtitleRaw = conf.subtitle.replace(
-    "{prenom}",
-    prenom ? `${prenom}, ` : ""
-  );
-  const subtitle = subtitleRaw[0].toUpperCase() + subtitleRaw.slice(1);
+  /* Le prénom vit dans le TITRE — c'est LA marque « on t'a reconnu » du
+     funnel. En sous-titre gris il passait inaperçu (constat 2026-07-15).
+     `"titlePrenom" in conf` : la personnalisation est une propriété de la
+     conf, pas du variant — un futur variant la porte en l'ajoutant à sa
+     config. Le remplacement passe par une fonction : un prénom saisi
+     contenant `$&` ou `$'` serait sinon interprété comme motif de
+     substitution par String.replace. */
+  const title =
+    prenom && "titlePrenom" in conf
+      ? conf.titlePrenom.replace("{prenom}", () => prenom)
+      : conf.title;
 
   // Spotlight qui suit la souris (desktop)
   const mx = useMotionValue(50);
@@ -127,26 +133,40 @@ export function Hero({
           {conf.badge}
         </motion.p>
 
-        <motion.h1
-          variants={titleWords}
-          className="text-[clamp(2.3rem,6.4vw,4.5rem)] font-normal leading-[1.1] tracking-[-0.005em] text-ink"
-        >
-          {conf.title.split(" ").map((w, i) => (
-            <motion.span
-              key={`${w}-${i}`}
-              variants={word}
-              className="mr-[0.24em] inline-block"
-            >
-              {w}
-            </motion.span>
-          ))}
-        </motion.h1>
+        {variant === "funnel" ? (
+          /* Pas de stagger par mot ici : le titre PEUT changer après
+             l'hydratation (prénom, sessionStorage). Re-keyer des
+             motion.span rejouerait toute l'entrée sur l'élément LCP —
+             flash + re-slide visibles. Un seul bloc animé : le swap de
+             texte se fait en place, sans rejouer l'animation. */
+          <motion.h1
+            variants={word}
+            className="text-[clamp(2.3rem,6.4vw,4.5rem)] font-normal leading-[1.1] tracking-[-0.005em] text-ink"
+          >
+            {title}
+          </motion.h1>
+        ) : (
+          <motion.h1
+            variants={titleWords}
+            className="text-[clamp(2.3rem,6.4vw,4.5rem)] font-normal leading-[1.1] tracking-[-0.005em] text-ink"
+          >
+            {title.split(" ").map((w, i) => (
+              <motion.span
+                key={`${w}-${i}`}
+                variants={word}
+                className="mr-[0.24em] inline-block"
+              >
+                {w}
+              </motion.span>
+            ))}
+          </motion.h1>
+        )}
 
         <motion.p
           variants={item}
           className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted sm:text-lg"
         >
-          {subtitle}
+          {conf.subtitle}
         </motion.p>
 
         <motion.div
