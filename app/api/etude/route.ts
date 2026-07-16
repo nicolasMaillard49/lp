@@ -9,10 +9,9 @@ export const runtime = "nodejs";
 /* ──────────────────────────────────────────────────────────────
    Capture email « Reçois ton étude » — filet sous le simulateur.
 
-   ⚠️ L'envoi réel n'est pas branché (pas de RESEND_API_KEY) — les
-   emails s'accumulent dans `etude_emails` pour relance manuelle /
-   branchement Resend futur. La route STOCKE, elle n'envoie rien :
-   dans un premier temps, Nicolas envoie l'étude à la main.
+   Stocke dans `etude_emails` (source des relances J+2/J+5 du cron)
+   puis envoie l'étude ROI en best-effort : un échec d'envoi ne
+   remonte jamais au prospect, la capture reste acquise.
    ────────────────────────────────────────────────────────────── */
 
 const ETUDE_TABLE = "etude_emails";
