@@ -20,8 +20,19 @@ describe("etudeEmail", () => {
     expect(subject).toBe("Ton étude Google Ads — Plombier à Bordeaux");
     expect(html).toContain("Plombier");
     expect(html).toContain("Bordeaux");
-    expect(html).toMatch(/892\s?€/u);
+    expect(html).toMatch(/4\s?460\s?€/u);
     expect(html).toMatch(/1\s?500 €/u);
+  });
+
+  /* Le garde-fou du 2026-07-17 : `net` et `roi` restent dans le snapshot
+     (trace interne du jsonb) mais ne doivent plus JAMAIS atteindre le
+     prospect — ils présupposent sa marge, donc ses charges. */
+  it("affiche le CA en bandeau, jamais le net ni le ROI", () => {
+    const { html } = etudeEmail({ snapshot: SNAPSHOT, unsubToken: "tok-1" });
+    expect(html).toMatch(/4\s?460\s?€/u);
+    expect(html).not.toMatch(/892/u);
+    expect(html).not.toMatch(/poche/iu);
+    expect(html).not.toMatch(/×\s?1,6/u);
   });
 
   it("lien de désinscription avec le token", () => {
@@ -103,15 +114,23 @@ const SNAP_LOOSE: Record<string, unknown> = {
 };
 
 describe("relanceJ2Email", () => {
-  it("net positif → sujet avec le chiffre", () => {
+  it("CA positif → sujet avec le chiffre", () => {
     const { subject, html } = relanceJ2Email({ snapshot: SNAP_LOOSE, unsubToken: "tok-2" });
-    expect(subject).toMatch(/^892 € par mois — ton étude t'attend$/u);
+    expect(subject).toMatch(/^4\s?460 € de chantiers par mois — ton étude t'attend$/u);
     expect(html).toContain("Plombier");
     expect(html).toContain("/api/unsub?t=tok-2");
   });
 
-  it("net négatif ou snapshot nul → sujet générique", () => {
-    expect(relanceJ2Email({ snapshot: { ...SNAP_LOOSE, net: -143 }, unsubToken: "t" }).subject).toBe(
+  /* Le net vit encore dans le snapshot (trace interne) : vérifier qu'il
+     ne fuit pas dans l'email malgré sa présence. */
+  it("ne laisse jamais fuiter le net du snapshot", () => {
+    const { subject, html } = relanceJ2Email({ snapshot: SNAP_LOOSE, unsubToken: "t" });
+    expect(subject).not.toMatch(/892/u);
+    expect(html).not.toMatch(/892/u);
+  });
+
+  it("CA nul ou snapshot nul → sujet générique", () => {
+    expect(relanceJ2Email({ snapshot: { ...SNAP_LOOSE, ca: 0 }, unsubToken: "t" }).subject).toBe(
       "Ton étude Google Ads t'attend"
     );
     expect(relanceJ2Email({ snapshot: null, unsubToken: "t" }).subject).toBe(
@@ -124,13 +143,22 @@ describe("relanceJ5Email", () => {
   it("intro avec chiffre + lien PDF + unsub", () => {
     const { subject, html } = relanceJ5Email({ snapshot: SNAP_LOOSE, unsubToken: "tok-5" });
     expect(subject).toBe("Le coût de l'attente");
-    expect(html).toMatch(/892\s?€/u);
+    expect(html).toMatch(/4\s?460\s?€/u);
     expect(html).toContain("/cout-de-lattente.pdf");
     expect(html).toContain("/api/unsub?t=tok-5");
   });
 
+  /* Le J+5 affirmait « c'est de la marge qui ne rentre pas » — un
+     bénéfice qu'on ne peut pas connaître. Il parle de chantiers. */
+  it("parle de chantiers qui ne rentrent pas, jamais de marge", () => {
+    const { html } = relanceJ5Email({ snapshot: SNAP_LOOSE, unsubToken: "t" });
+    expect(html).toContain("de chantiers qui ne rentrent pas");
+    expect(html).not.toMatch(/marge/iu);
+    expect(html).not.toMatch(/892/u);
+  });
+
   it("sans chiffre exploitable → intro générique", () => {
     const { html } = relanceJ5Email({ snapshot: null, unsubToken: "t" });
-    expect(html).toContain("c'est de la marge qui ne rentre pas");
+    expect(html).toContain("ce sont des chantiers qui ne rentrent pas");
   });
 });

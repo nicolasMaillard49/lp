@@ -57,13 +57,13 @@ export function etudeEmail(args: {
 
   /* Le chiffre est déjà dans le bandeau : ici on montre d'où il sort.
      Métier et ville sont dans le sous-titre du bandeau — les répéter
-     volerait des lignes aux chiffres. */
-  const roiTxt = s.roi.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+     volerait des lignes aux chiffres.
+     La ligne « Retour sur ce que tu investis ×N » a sauté le 2026-07-17 :
+     ce ×N était marge/investi, avec une marge que nous présupposions. */
   const rows = [
     row("Budget mensuel (Ads + gestion)", esc(fmtEuro(s.budget))),
     row("Chantiers estimés / mois", esc(String(s.chantiers))),
     row("CA estimé / mois", esc(fmtEuro(s.ca))),
-    row("Retour sur ce que tu investis", esc(`×${roiTxt}`)),
   ].join("");
 
   const body = `
@@ -76,9 +76,9 @@ export function etudeEmail(args: {
   return {
     subject,
     html: layout({
-      preheader: `${fmtEuro(s.net)} par mois — ton étude ${s.metier} à ${s.ville}.`,
+      preheader: `${fmtEuro(s.ca)} de chantiers par mois — ton étude ${s.metier} à ${s.ville}.`,
       bande: bandeau(
-        `${esc(t.bandeauAvant)}<br>${big(fmtEuro(s.net))} ${esc(t.bandeauApres)}`,
+        `${esc(t.bandeauAvant)}<br>${big(fmtEuro(s.ca))} ${esc(t.bandeauApres)}`,
         t.bandeauSub(s.metier, s.ville)
       ),
       body,

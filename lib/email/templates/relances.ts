@@ -50,9 +50,13 @@ export function relanceJ2Email(args: { snapshot: LooseSnapshot; unsubToken: stri
   html: string;
 } {
   const t = emails.relanceJ2;
-  const net = num(args.snapshot?.net);
-  const avecChiffre = net !== null && net > 0;
-  const subject = avecChiffre ? t.subjectAvecChiffre(fmtEuro(net)) : t.subjectSansChiffre;
+  /* `ca` et non `net` (2026-07-17) : le net présupposait sa marge. `ca`
+     est dans la whitelist SNAP_NUM de /api/etude, donc présent partout.
+     ⚠️ Les lignes créées AVANT cette date ont un snapshot avec `net` mais
+     aussi `ca` — la bascule est rétro-compatible. */
+  const ca = num(args.snapshot?.ca);
+  const avecChiffre = ca !== null && ca > 0;
+  const subject = avecChiffre ? t.subjectAvecChiffre(fmtEuro(ca)) : t.subjectSansChiffre;
 
   const body = `
     ${para(t.body, 0)}
@@ -66,7 +70,7 @@ export function relanceJ2Email(args: { snapshot: LooseSnapshot; unsubToken: stri
       preheader: t.bandeauSub,
       bande: bandeau(
         avecChiffre
-          ? `${esc(t.bandeauAvant)}<br>${big(fmtEuro(net))} ${esc(t.bandeauApres)}`
+          ? `${esc(t.bandeauAvant)}<br>${big(fmtEuro(ca))} ${esc(t.bandeauApres)}`
           : esc(t.bandeauSansChiffre),
         t.bandeauSub
       ),
@@ -81,8 +85,9 @@ export function relanceJ5Email(args: { snapshot: LooseSnapshot; unsubToken: stri
   html: string;
 } {
   const t = emails.relanceJ5;
-  const net = num(args.snapshot?.net);
-  const avecChiffre = net !== null && net > 0;
+  /* Voir relanceJ2Email : `ca` remplace `net` depuis le 2026-07-17. */
+  const ca = num(args.snapshot?.ca);
+  const avecChiffre = ca !== null && ca > 0;
 
   /* Une seule idée : le temps qui passe. Pas de tableau. */
   const body = `
@@ -94,10 +99,10 @@ export function relanceJ5Email(args: { snapshot: LooseSnapshot; unsubToken: stri
   return {
     subject: t.subject,
     html: layout({
-      preheader: avecChiffre ? t.introAvecChiffre(fmtEuro(net)) : t.introSansChiffre,
+      preheader: avecChiffre ? t.introAvecChiffre(fmtEuro(ca)) : t.introSansChiffre,
       bande: bandeau(
         avecChiffre
-          ? `${esc(t.bandeauAvant)}<br>${big(fmtEuro(net))} ${esc(t.bandeauApres)}`
+          ? `${esc(t.bandeauAvant)}<br>${big(fmtEuro(ca))} ${esc(t.bandeauApres)}`
           : esc(t.bandeauSansChiffre),
         t.bandeauSub
       ),

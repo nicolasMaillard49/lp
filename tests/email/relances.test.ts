@@ -6,7 +6,7 @@ const NOW = new Date("2026-07-16T09:00:00Z");
 function rowAt(daysAgo: number, over: Partial<EtudeRow> = {}): EtudeRow {
   return {
     email: "a@b.fr",
-    snapshot: { metier: "Plombier", net: 892 },
+    snapshot: { metier: "Plombier", ca: 4460 },
     created_at: new Date(NOW.getTime() - daysAgo * DAY).toISOString(),
     unsub_token: "tok",
     unsubscribed_at: null,
@@ -59,11 +59,11 @@ describe("planRelances", () => {
 
   it("plusieurs lignes même email → âge de la 1ʳᵉ capture, snapshot de la dernière", () => {
     const plans = plan([
-      rowAt(3, { snapshot: { net: 100 }, unsub_token: "vieux" }),
-      rowAt(1, { snapshot: { net: 892 }, unsub_token: "recent" }),
+      rowAt(3, { snapshot: { ca: 100 }, unsub_token: "vieux" }),
+      rowAt(1, { snapshot: { ca: 4460 }, unsub_token: "recent" }),
     ]);
     expect(plans).toMatchObject([
-      { kind: "relance-j2", snapshot: { net: 892 }, unsubToken: "recent" },
+      { kind: "relance-j2", snapshot: { ca: 4460 }, unsubToken: "recent" },
     ]);
   });
 

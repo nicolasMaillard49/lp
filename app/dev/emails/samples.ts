@@ -11,6 +11,10 @@ const SNAPSHOT = {
   metier: "Plombier",
   ville: "Bordeaux",
   budget: 1500,
+  /* `net` et `roi` restent : le type EtudeSnapshot les exige et le jsonb
+     les stocke (trace interne). Depuis le 2026-07-17 ils ne doivent plus
+     apparaître dans AUCUN email — si tu vois « 892 » dans une préview,
+     c'est une fuite. Le chiffre attendu est le CA (4 460 €). */
   net: 892,
   roi: 1.6,
   ca: 4460,
