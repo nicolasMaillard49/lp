@@ -404,8 +404,13 @@ export function SimulateurRoi({
     const key = JSON.stringify(payload);
     if (key === lastResultatSent.current) return;
     const timer = setTimeout(() => {
-      lastResultatSent.current = key;
-      fbTrackCustom("SimulateurResultat", payload);
+      /* La ref SEULEMENT si l'event est parti (corrigé le 2026-07-17).
+         Poser la ref d'abord reproduisait le bug du 2026-07-13 : si fbq
+         n'est pas prêt, l'event est perdu ET la ref interdit toute
+         nouvelle tentative pour ce réglage. */
+      if (fbTrackCustom("SimulateurResultat", payload)) {
+        lastResultatSent.current = key;
+      }
     }, 2500);
     return () => clearTimeout(timer);
   }, [metier.nom, villeResultat, total, net, r.roi, perte]);

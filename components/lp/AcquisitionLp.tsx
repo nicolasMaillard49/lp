@@ -14,6 +14,7 @@ import {
   type SimSnapshot,
 } from "@/components/simulateur/SimulateurRoi";
 import { fbTrack } from "@/lib/fpixel";
+import { useAuditSession } from "@/hooks/useAuditSession";
 
 const eur = (v: number) =>
   v.toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " €";
@@ -36,6 +37,14 @@ export function AcquisitionLp({
   before?: ReactNode;
   after?: ReactNode;
 }) {
+  /* La session s'ouvre ICI, à l'arrivée sur la LP — pas dans AuditForm
+     (2026-07-17). Le hook y était appelé, or AuditForm n'est monté
+     qu'après le clic CTA : `visit` mesurait donc l'ouverture du
+     formulaire, et 606 visites Meta ne produisaient qu'1 ligne en base.
+     On était aveugle sur exactement l'endroit où le trafic se perd —
+     entre l'arrivée et le CTA. La session est passée à AuditForm pour
+     que le même `session_id` porte visit → progress → submit. */
+  const session = useAuditSession();
   const [snap, setSnap] = useState<SimSnapshot | null>(null);
 
   /* Reprise de session : si le visiteur avait quitté EN PLEIN form (un
@@ -123,6 +132,7 @@ export function AcquisitionLp({
 
   return (
     <AuditForm
+      session={session}
       known={known}
       recap={{
         title: [snap.metier, snap.ville || snap.zoneLabel, `${eur(snap.budget)}/mois`]

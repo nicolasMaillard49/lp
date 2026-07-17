@@ -59,9 +59,17 @@ fbq('init','${FB_PIXEL_ID}');
 fbq('track','PageView');`,
           }}
         />
+        {/* `afterInteractive` et non `lazyOnload` (2026-07-17).
+            `lazyOnload` attend window.load PUIS l'idle : un visiteur qui
+            rebondit avant emporte la file avec son onglet — l'event est
+            perdu, sans repli CAPI serveur. Or 100 % du trafic Meta arrive
+            en webview in-app Instagram/Facebook, où les rebonds < 3 s sont
+            la norme. Le gain perf de lazyOnload était de toute façon
+            théorique : le stub inline ci-dessus tient déjà la file, c'est
+            LUI qui protège le LCP, pas le report du chargement. */}
         <Script
           id="fb-pixel"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
           src="https://connect.facebook.net/en_US/fbevents.js"
         />
         <noscript>

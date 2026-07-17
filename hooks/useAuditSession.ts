@@ -43,8 +43,29 @@ function send(endpoint: string, payload: Payload) {
   }
 }
 
-/** Gère l'identité de session et l'envoi des events de tracking. */
-export function useAuditSession(endpoint: string = "/api/audit") {
+export type AuditSession = {
+  progress: (lastStep: number, answers: Payload) => void;
+  submit: (answers: Payload) => void;
+};
+
+/**
+ * Gère l'identité de session et l'envoi des events de tracking.
+ *
+ * `autoVisit` (défaut true) émet l'event `visit` au mount. Le passer à
+ * `false` quand une session est déjà ouverte par un parent — sinon deux
+ * sessions concurrentes seraient créées pour un seul visiteur.
+ *
+ * ⚠️ Où ce hook est appelé DÉFINIT ce que `visit` mesure. Jusqu'au
+ * 2026-07-17 il n'était appelé que dans `AuditForm`, monté seulement après
+ * le clic CTA : `visit` mesurait donc l'OUVERTURE DU FORMULAIRE, pas
+ * l'arrivée sur la page. D'où 606 visites Meta pour 1 ligne en base — et
+ * l'impossibilité totale de savoir où le trafic se perdait. Sur la LP il
+ * est désormais appelé par `AcquisitionLp` (voir là-bas).
+ */
+export function useAuditSession(
+  endpoint: string = "/api/audit",
+  { autoVisit = true }: { autoVisit?: boolean } = {}
+): AuditSession {
   const sessionId = useRef<string>("");
   const visitorId = useRef<string>("");
   const startedAt = useRef<number>(0);
@@ -63,13 +84,14 @@ export function useAuditSession(endpoint: string = "/api/audit") {
     } catch {
       visitorId.current = uuid();
     }
+    if (!autoVisit) return;
     send(endpoint, {
       session_id: sessionId.current,
       visitor_id: visitorId.current,
       event: "visit",
       attribution: readAttribution(),
     });
-  }, [endpoint]);
+  }, [endpoint, autoVisit]);
 
   const progress = useCallback(
     (lastStep: number, answers: Payload) => {

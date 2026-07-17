@@ -11,7 +11,7 @@ import {
 } from "@/config/form";
 import { site } from "@/config/site";
 import { fbTrack } from "@/lib/fpixel";
-import { useAuditSession } from "@/hooks/useAuditSession";
+import { useAuditSession, type AuditSession } from "@/hooks/useAuditSession";
 import { StepField } from "./StepField";
 import { ProgressBar } from "./ProgressBar";
 
@@ -103,13 +103,24 @@ function validate(step: Step, value: unknown): string | null {
 export function AuditForm({
   known = {},
   recap,
+  session,
 }: {
   /** Réponses déjà obtenues ailleurs (simulateur) — ces écrans sautent. */
   known?: Known;
   recap?: Recap;
+  /**
+   * Session déjà ouverte par un parent (la LP `/` l'ouvre à l'arrivée sur
+   * la page, pas à l'ouverture du form). Absente sur `/audit`, où le
+   * formulaire EST la page d'arrivée : il ouvre alors la sienne.
+   */
+  session?: AuditSession;
 }) {
   const reduce = useReducedMotion();
-  const { progress, submit } = useAuditSession();
+  /* Le hook est toujours appelé (règle des hooks), mais n'émet `visit`
+     que s'il n'y a pas de session parente — sinon on créerait deux
+     sessions pour un seul visiteur. */
+  const own = useAuditSession("/api/audit", { autoVisit: !session });
+  const { progress, submit } = session ?? own;
 
   /* La longueur du form se déduit de `known` : court sur le parcours ads
      (le simulateur a déjà parlé), complet en organique. */
