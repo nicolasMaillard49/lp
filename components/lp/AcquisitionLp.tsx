@@ -47,6 +47,32 @@ export function AcquisitionLp({
   const session = useAuditSession();
   const [snap, setSnap] = useState<SimSnapshot | null>(null);
 
+  /* ViewContent à l'arrivée sur le simulateur : donne à Meta un signal
+     d'intention en HAUT du funnel (avant InitiateCheckout), exploitable
+     en optimisation comme en retargeting. Dédup par session, flag posé
+     UNIQUEMENT si l'event est parti (le pixel peut ne pas être encore
+     chargé — motif TrackLead, bug du 2026-07-13). */
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("nmf_vc_fired")) return;
+      if (fbTrack("ViewContent", { content_name: "simulateur-roi" })) {
+        sessionStorage.setItem("nmf_vc_fired", "1");
+      }
+    } catch {
+      /* sessionStorage indisponible → on tente l'event sans dédup */
+      fbTrack("ViewContent", { content_name: "simulateur-roi" });
+    }
+  }, []);
+
+  /* Bouton retour = revenir au simulateur, pas quitter le site. Chaque
+     passage au form pousse une entrée d'historique ; popstate ré-affiche
+     le simulateur (les réponses du form survivent : brouillon continu). */
+  useEffect(() => {
+    const onPop = () => setSnap(null);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   /* Reprise de session : si le visiteur avait quitté EN PLEIN form (un
      snap ET un brouillon de réponses existent), on le remet directement
      sur le form — AuditForm réhydrate ses réponses tout seul. Un snap
@@ -64,8 +90,11 @@ export function AcquisitionLp({
         typeof ts === "number" && Date.now() - ts < DRAFT_TTL_MS;
       if (fresh(stored.ts) && fresh(draft.ts) && stored.snap) {
         /* setSnap direct, sans repasser par start() : un simple retour
-           d'onglet ne doit pas re-déclencher InitiateCheckout. */
+           d'onglet ne doit pas re-déclencher InitiateCheckout. L'entrée
+           d'historique, elle, est bien poussée — sinon le bouton retour
+           d'une session reprise sortirait du site. */
         setSnap(stored.snap);
+        window.history.pushState({ nmf: "form" }, "");
       }
     } catch {
       /* localStorage indisponible → parcours normal, jamais bloquant */
@@ -74,6 +103,7 @@ export function AcquisitionLp({
 
   const start = useCallback((s: SimSnapshot) => {
     setSnap(s);
+    window.history.pushState({ nmf: "form" }, "");
     /* Snapshot persisté pour la reprise de session : si l'onglet se ferme
        en plein form, le prochain passage ré-affiche directement le form.
        AuditForm purge cette clé (avec son brouillon) au submit réussi. */
@@ -139,7 +169,11 @@ export function AcquisitionLp({
           .filter(Boolean)
           .join(" · "),
         detail: `≈ ${snap.chantiers.toFixed(1).replace(".", ",")} chantiers/mois · ${eur(snap.ca)} de CA estimé`,
-        onEdit: () => setSnap(null),
+        /* back() plutôt que setSnap(null) : l'entrée d'historique poussée
+           à l'entrée du form est consommée, popstate fait le reste — le
+           bouton « Modifier » et le bouton retour du navigateur suivent
+           exactement le même chemin. */
+        onEdit: () => window.history.back(),
       }}
     />
   );

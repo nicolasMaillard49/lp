@@ -77,8 +77,17 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabase();
-  // Sans Supabase configuré (dev), on ne bloque pas l'UX : on répond ok.
-  if (!supabase) return NextResponse.json({ ok: true, stored: false });
+  /* Sans Supabase configuré : en dev on dégrade proprement (UI OK, write
+     no-op). En PROD c'est une panne de config — répondre ok jetterait le
+     lead en silence. 503 : le client (sendConfirmed) retente, les logs
+     Vercel remontent la panne. */
+  if (!supabase) {
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json({ ok: true, stored: false });
+    }
+    console.error("[api/audit] Supabase non configuré en production — lead non stockable");
+    return NextResponse.json({ ok: false, error: "storage unavailable" }, { status: 503 });
+  }
 
   const lastStepRaw = Number(body.last_step);
   const lastStep = Number.isFinite(lastStepRaw)

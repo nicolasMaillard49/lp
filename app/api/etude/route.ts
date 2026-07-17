@@ -58,8 +58,15 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabase();
-  // Sans Supabase configuré (dev), on ne bloque pas l'UX : on répond ok.
-  if (!supabase) return NextResponse.json({ ok: true, stored: false });
+  /* Sans Supabase configuré : dégradation douce en dev seulement — en
+     PROD répondre ok jetterait l'email capturé en silence. */
+  if (!supabase) {
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json({ ok: true, stored: false });
+    }
+    console.error("[api/etude] Supabase non configuré en production — email non stockable");
+    return NextResponse.json({ ok: false, error: "storage unavailable" }, { status: 503 });
+  }
 
   const snapshot = sanitizeSnapshot(body.snapshot);
   const { data, error } = await supabase

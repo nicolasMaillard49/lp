@@ -49,8 +49,15 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabase();
-  // Sans Supabase configuré (dev), on ne bloque pas l'UX : on répond ok.
-  if (!supabase) return NextResponse.json({ ok: true, stored: false });
+  /* Sans Supabase configuré : dégradation douce en dev seulement — en
+     PROD répondre ok jetterait la réponse R2 en silence. */
+  if (!supabase) {
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json({ ok: true, stored: false });
+    }
+    console.error("[api/r2] Supabase non configuré en production — réponse non stockable");
+    return NextResponse.json({ ok: false, error: "storage unavailable" }, { status: 503 });
+  }
 
   const lastStepRaw = Number(body.last_step);
   const lastStep = Number.isFinite(lastStepRaw)

@@ -212,30 +212,43 @@ export function AuditForm({
 
       if (isLast) {
         setSubmitting(true);
-        submit(payload);
+        /* Le submit se CONFIRME avant de rediriger (timeout + retry dans
+           le hook) : rediriger au timer pendant que la requête vole,
+           c'était un Lead Meta possible avec une base vide. L'écran
+           « terminé » s'affiche pendant l'attente ; le délai d'animation
+           sert de plancher, la confirmation de plafond. En cas d'échec
+           après retry on redirige quand même — on ne prend pas le
+           prospect en otage — mais on n'a plus jamais redirigé AVANT
+           d'avoir vraiment essayé. */
+        const stored = submit(payload);
         /* Signal d'intention pour Meta — le Lead, lui, se déclenche à
            l'arrivée sur /bienvenue (TrackLead), même domaine : aucune
            dépendance à un outil tiers pour la conversion. */
         fbTrack("SubmitApplication");
         stashContact(payload);
-        /* Parcours terminé : brouillon et snapshot simulateur n'ont plus
-           de raison d'exister — sinon un prochain passage « reprendrait »
-           un form déjà soumis. */
-        try {
-          localStorage.removeItem(DRAFT_KEY);
-          localStorage.removeItem(SNAP_KEY);
-        } catch {
-          /* silencieux */
-        }
         setDone(true);
-        /* Le lead est en base ; le créneau se choisit sur /bienvenue en
-           variante booking (`?reserver=1` : Koalendar intégré + prénom,
-           préremplis via stashContact). Sans ce flag, /bienvenue reste la
-           page « ton RDV existe déjà » servie aux clients bookés à la main. */
-        window.setTimeout(
-          () => window.location.assign(`${form.redirectTo}?reserver=1`),
-          reduce ? 400 : 1600
+        const minDelay = new Promise<void>((r) =>
+          window.setTimeout(r, reduce ? 400 : 1600)
         );
+        void Promise.all([stored, minDelay]).then(([ok]) => {
+          /* Brouillon et snapshot purgés seulement une fois le lead
+             confirmé en base : si l'écriture a échoué, le brouillon
+             permet au prospect (ou à une reprise de session) de
+             re-soumettre au lieu de perdre les réponses. */
+          if (ok) {
+            try {
+              localStorage.removeItem(DRAFT_KEY);
+              localStorage.removeItem(SNAP_KEY);
+            } catch {
+              /* silencieux */
+            }
+          }
+          /* Le lead est en base ; le créneau se choisit sur /bienvenue en
+             variante booking (`?reserver=1` : Koalendar intégré + prénom,
+             préremplis via stashContact). Sans ce flag, /bienvenue reste la
+             page « ton RDV existe déjà » servie aux clients bookés à la main. */
+          window.location.assign(`${form.redirectTo}?reserver=1`);
+        });
         return;
       }
 

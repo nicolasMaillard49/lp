@@ -43,9 +43,39 @@ function send(endpoint: string, payload: Payload) {
   }
 }
 
+/* Le submit final, lui, se CONFIRME : c'est le lead. Timeout 8 s puis un
+   retry (les mobiles perdent une requête sur un changement de réseau).
+   Retourne true seulement si le serveur a répondu { ok: true } — c'est ce
+   qui autorise AuditForm à rediriger sans risquer un Lead Meta compté
+   pendant que la base est restée vide. */
+async function sendConfirmed(endpoint: string, payload: Payload): Promise<boolean> {
+  const attempt = async (): Promise<boolean> => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) return false;
+      const json = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+      return json?.ok === true;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  if (await attempt()) return true;
+  await new Promise((r) => setTimeout(r, 600));
+  return attempt();
+}
+
 export type AuditSession = {
   progress: (lastStep: number, answers: Payload) => void;
-  submit: (answers: Payload) => void;
+  submit: (answers: Payload) => Promise<boolean>;
 };
 
 /**
@@ -109,9 +139,9 @@ export function useAuditSession(
   );
 
   const submit = useCallback(
-    (answers: Payload) => {
-      if (!sessionId.current) return;
-      send(endpoint, {
+    (answers: Payload): Promise<boolean> => {
+      if (!sessionId.current) return Promise.resolve(false);
+      return sendConfirmed(endpoint, {
         session_id: sessionId.current,
         visitor_id: visitorId.current,
         event: "submit",
