@@ -17,7 +17,8 @@
             ⚠️ Vérifier que le LSA existe en France pour maçon /
             couvreur / terrassier : il fournit la moitié des leads
             du scénario par défaut. Risque binaire.
-   · panier / transfo / marge → presets maison, ajustables.
+   · panier / transfo → presets maison, ajustables par le visiteur.
+   · marge → preset maison INTERNE, jamais affiché (voir `margeDefaut`).
 
    ⚠️ CORRECTIF 2026-07-14 — `conv` était une constante UI à 15 %
    appliquée à TOUS les métiers. C'est la variable la plus dispersée
@@ -57,10 +58,18 @@ export type Metier = {
    */
   taux: readonly [petiteVille: number, metropole: number];
   /**
-   * Marge brute par défaut (%) — preset MAISON, ajustable par le
-   * visiteur. Dépannage/main-d'œuvre haut (plombier, serrurier),
-   * gros œuvre bas (maçon, terrassier : matériaux + sous-traitance).
-   * Une constante unique à 30 % refaisait l'erreur du `conv` uniforme.
+   * Marge brute par défaut (%) — preset MAISON, **INTERNE UNIQUEMENT**.
+   *
+   * ⚠️ Ne JAMAIS rendre ce chiffre, ni rien qui en dérive, à l'artisan.
+   * Sa marge dépend de ses charges (URSSAF, IS/IR, véhicule, assurance,
+   * salaire) : la présupposer puis lui annoncer son « net » était le bug
+   * corrigé le 2026-07-17. Ce preset ne sert plus qu'à nous — qualifier
+   * un lead (pixel Meta, snapshot) et savoir si Google Ads a du sens
+   * pour ce métier. C'est LUI qui sait s'il est rentable, pas nous.
+   *
+   * Dépannage/main-d'œuvre haut (plombier, serrurier), gros œuvre bas
+   * (maçon, terrassier : matériaux + sous-traitance). Une constante
+   * unique à 30 % refaisait l'erreur du `conv` uniforme.
    */
   margeDefaut: number;
   /**
@@ -152,9 +161,13 @@ export const simulateur = {
   backHref: "/preparation#ressources",
 
   eyebrow: "L'outil NMF",
-  title: "Estime ton retour sur investissement",
+  /* « Estime ton retour sur investissement » (jusqu'au 2026-07-17)
+     promettait exactement ce qu'on a cessé de calculer : SON retour
+     dépend de ses charges. On annonce ce qu'on sait faire — estimer les
+     chantiers et le CA que la campagne peut générer. */
+  title: "Estime les chantiers que Google Ads peut t'apporter",
   subtitle:
-    "Choisis ton métier, tape ta ville, règle ton budget. Les curseurs partent des moyennes nationales de ton métier — remplace-les par tes vrais chiffres, l'estimation se recalcule en direct. C'est un ordre de grandeur pour décider, pas une garantie de résultat. Tu peux l'emporter en PDF.",
+    "Choisis ton métier, tape ta ville, règle ton budget. Les curseurs partent des moyennes nationales de ton métier — remplace-les par tes vrais chiffres, l'estimation se recalcule en direct. C'est du chiffre d'affaires, pas du bénéfice : à toi d'en déduire tes charges. Un ordre de grandeur pour décider, pas une garantie de résultat. Tu peux l'emporter en PDF.",
 
   /**
    * La phrase d'entrée — l'artisan lit une phrase, il ne remplit pas un
@@ -176,15 +189,29 @@ export const simulateur = {
     repartition: (pub: string, gestion: string) =>
       `${pub} de publicité Google + ${gestion} de gestion NMF`,
     tropBas: "En dessous, il ne reste plus assez pour la publicité une fois la gestion payée.",
-    resultat: "Voilà ce que tu peux espérer",
-    net: "dans ta poche, chaque mois",
-    netDetail: "de marge dégagée, moins",
-    netDetail2: "de pub et de gestion.",
+    resultat: "Voilà ce que ça peut générer",
+    /* Le CA, pas la marge : c'est le seul chiffre du résultat qui ne
+       dépende pas des charges de l'artisan. « Signés » et pas
+       « facturés » : on parle de chantiers gagnés, pas d'encaissement. */
+    ca: "de chantiers signés, chaque mois",
+    /** Sous le chiffre : ce que ça coûte, sans arrondi ni pudeur. */
+    coutDetail: (total: string, pub: string, gestion: string) =>
+      `pour ${total} par mois tout compris — ${pub} de publicité Google + ${gestion} de gestion NMF.`,
+    /* Remplace les verdicts. Un fait, pas un jugement : on ne sait pas
+       si c'est rentable POUR LUI (ça dépend de ses charges), mais on
+       sait exactement ce qu'un chantier lui coûte en pub. C'est lui
+       qui conclut — et il est le seul à pouvoir le faire. */
+    cac: (cac: string, panier: string) =>
+      `Soit ${cac} investis par chantier signé, sur un panier moyen de ${panier}. À toi de voir ce que ça vaut une fois tes charges déduites.`,
     affiner: "Affiner avec mes vrais chiffres",
     affinerAide: "Si tu connais tes taux, remplace les moyennes de ton métier.",
     detail: "Comment on arrive là",
     comparatif: "Voir les autres métiers",
-    perte: "À ce budget, tu y perds",
+    /* Le SEUL état négatif qu'on puisse affirmer sans connaître sa
+       marge : si le CA généré est inférieur à ce qu'il investit, c'est
+       une perte quelle que soit sa marge (marge ≤ 100 % du CA). Toute
+       autre affirmation de perte serait une invention. */
+    perte: "À ce budget, la campagne coûte plus qu'elle ne rapporte",
   },
 
   params: {
@@ -215,13 +242,10 @@ export const simulateur = {
     variantes: "Variantes de recherche comptées",
     variantesHint:
       "Personne ne tape juste « plombier » : on tape « plombier + ta ville », « fuite d'eau », « dépannage »… Le mot principal seul sous-estime le marché ; ce facteur l'élargit. ×4 par défaut — hypothèse, pas mesure.",
-    marge: "Ta marge brute",
-    /* On ne prétend PAS connaître sa marge : aucune source primaire
-       FR fiable n'existe (les blogs se contredisent de 1 à 10 %, et
-       le « taux de marge » INSEE à 22,1 % est un EBE/VA — pas une
-       marge nette). C'est lui qui sait. Et le lui demander rend
-       l'outil plus crédible, pas moins. */
-    margeHint: "Ce qu'il te reste sur un chantier, une fois le matériel et la main-d'œuvre payés",
+    /* `marge` / `margeHint` supprimés le 2026-07-17 : le curseur « Ta
+       marge brute » a disparu avec l'affichage du net. On ne lui demande
+       plus sa marge parce qu'on ne lui affiche plus rien qui en dépende.
+       Le preset `margeDefaut` reste, en interne uniquement. */
   },
 
   kpis: {
@@ -258,29 +282,23 @@ export const simulateur = {
     cac: "Coût d'acquisition par chantier",
   },
 
-  /**
-   * Verdicts calés sur le RETOUR SUR MARGE, pas sur le CA.
-   * Un retour ×1 sur la marge = tu rentres exactement dans tes frais.
-   * Les anciens seuils (« très rentable » dès ×5 sur le CA) qualifiaient
-   * de rentable une perte sèche pour un artisan à 25 % de marge, qui a
-   * besoin de ×4 sur le CA rien que pour l'équilibre.
-   */
-  /* UNE phrase par verdict (épure 2026-07-15) : la ligne netDetail fait
-     déjà le calcul juste au-dessus — le verdict ne le répète plus. Les
-     signatures ne mentent pas : seuls high/mid consomment le ROI, les
-     deux autres sont des constantes. */
-  verdicts: {
-    high: (roi: string) => `Très rentable — ×${roi} sur ce que tu mets.`,
-    mid: (roi: string) =>
-      `Rentable — ×${roi} sur ce que tu mets, hors récurrence client.`,
-    low: "Tout juste à l'équilibre — tu travailles pour payer ta pub.",
-    loss: "À ce budget, Google Ads n'est pas le bon canal — on en parle.",
-  },
+  /* Les verdicts (« Très rentable ×5 ») ont été supprimés le 2026-07-17.
+     Ils étaient calés sur `roi = marge / total`, donc sur une marge que
+     nous PRÉSUPPOSIONS. Un ×4 sur le CA est une perte pour un maçon à
+     25 % de marge et un gain net pour un serrurier à 50 % : le même
+     verdict ne peut pas être vrai pour les deux. On affiche désormais le
+     CA généré, le coût, et le coût par chantier (`phrase.cac`) — trois
+     faits — et c'est l'artisan qui juge, lui seul connaissant ses
+     charges. Ne pas les réintroduire sur le CA : c'est exactement le bug
+     que le correctif du 14/07 avait supprimé. */
 
   comparatif: {
     heading: "Comparatif tous métiers",
     hint: "mêmes budgets, moyennes par métier",
-    cols: ["Métier", "CPC", "Conv.", "Leads", "Chantiers", "CA", "Retour"],
+    /* « Retour » (×roi sur marge présupposée) remplacé le 2026-07-17 par
+       le coût par chantier : comparable entre métiers, et ne prétend rien
+       sur une rentabilité qui dépend des charges de chacun. */
+    cols: ["Métier", "CPC", "Conv.", "Leads", "Chantiers", "CA", "€ / chantier"],
   },
 
   footnote:

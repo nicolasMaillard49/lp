@@ -326,7 +326,6 @@ export function SimulateurRoi({
   const [conv, setConv] = useState(metiers[0].conv);
   const [transfo, setTransfo] = useState(metiers[0].transfo);
   const [panier, setPanier] = useState(metiers[0].panier);
-  const [marge, setMarge] = useState(metiers[0].margeDefaut);
   const [variantes, setVariantes] = useState(4);
 
   const [date, setDate] = useState<string | null>(null);
@@ -354,37 +353,36 @@ export function SimulateurRoi({
     conv: conv / 100,
     transfo: transfo / 100,
     panier,
-    marge: marge / 100,
+    /* INTERNE — le preset du métier, plus un réglage visible. Sert au
+       pixel Meta et au snapshot, jamais à l'affichage. */
+    marge: metier.margeDefaut / 100,
     /* Sans commune reconnue : ville moyenne neutre, bassin type Brive. */
     pop: match.commune?.[1] ?? 47_000,
     variantes,
   };
   const r = compute(metier, p);
 
-  /* Changer de métier recharge SES moyennes — conv ET marge : les
-     constantes uniformes étaient le bug d'origine (dépannage et gros
-     œuvre n'ont ni la même conversion ni la même marge). */
+  /* Changer de métier recharge SES moyennes. La marge suit le preset du
+     métier sans passer par un état : elle n'est plus réglable (elle
+     n'est plus affichée). */
   const pickMetier = (i: number) => {
     setMetierIdx(i);
     setConv(metiers[i].conv);
     setTransfo(metiers[i].transfo);
     setPanier(metiers[i].panier);
-    setMarge(metiers[i].margeDefaut);
   };
 
-  const roiTxt = dec(r.roi);
-  const perte = r.roi < 1;
-  /* Ce qui reste réellement : la marge dégagée MOINS tout ce qu'il a
-     sorti (pub + gestion). C'est le seul chiffre qu'un artisan
-     reconnaît comme « ce que ça me rapporte ». */
+  /* `perte` ne se juge PLUS sur la marge (on ne la connaît pas) mais sur
+     un fait arithmétique : si le CA généré est inférieur à ce qu'il
+     investit, c'est une perte quelle que soit sa marge — la marge est au
+     mieux 100 % du CA. C'est le seul état négatif honnête. */
+  const perte = r.ca < r.total;
+  /* Le coût d'acquisition d'un chantier — même formule que <Detail>. */
+  const cac = r.chantiers ? r.total / r.chantiers : 0;
+  /* INTERNE — jamais rendu. Alimente le pixel Meta (audiences) et le
+     snapshot jsonb. La marge de l'artisan ne s'affiche pas : c'est lui
+     qui connaît ses charges, pas nous. */
   const net = r.marge - r.total;
-  const verdict = perte
-    ? s.verdicts.loss
-    : r.roi < 1.5
-      ? s.verdicts.low
-      : r.roi < 3
-        ? s.verdicts.mid(roiTxt)
-        : s.verdicts.high(roiTxt);
 
   /* Retargeting Meta « SimulateurResultat » — alimente les audiences de
      relance personnalisée (« Tes X €/mois t'attendent »). Débouncé
@@ -498,10 +496,10 @@ export function SimulateurRoi({
           </p>
         </div>
 
-        {/* Le résultat — UN chiffre : ce qui reste vraiment en poche une
-            fois la pub et la gestion payées. Afficher la marge brute ici
-            se contredisait avec le libellé « tu y perds » : le libellé
-            annonçait une perte, le chiffre affichait un gain. */}
+        {/* Le résultat — DEUX faits : le CA que la campagne peut générer,
+            et ce qu'elle coûte. Pas de marge, pas de « dans ta poche »,
+            pas de verdict : sa rentabilité dépend de ses charges, qu'on
+            ne connaît pas. Le CAC en bas lui donne de quoi juger seul. */}
         <div className={`px-5 py-6 ${perte ? "bg-white" : "bg-sim-blue text-white"}`}>
           <p
             className={`text-[10px] font-bold uppercase tracking-[0.12em] ${perte ? "text-sim-muted" : "text-white/70"}`}
@@ -512,20 +510,22 @@ export function SimulateurRoi({
             <span
               className={`text-4xl font-bold tabular-nums sm:text-5xl ${perte ? "text-sim-blue" : ""}`}
             >
-              {net >= 0 ? "+" : "−"} {eur(Math.abs(net))}
+              {eur(r.ca)}
             </span>
             <span className={perte ? "text-sim-muted" : "text-white/80"}>
-              {s.phrase.net}
+              {s.phrase.ca}
             </span>
           </p>
           <p
             className={`mt-2 text-sm ${perte ? "text-sim-muted" : "text-white/70"}`}
           >
-            {eur(r.marge)} {s.phrase.netDetail} {eur(r.total)} {s.phrase.netDetail2}
+            {s.phrase.coutDetail(eur(r.total), eur(budget), eur(nmf))}
           </p>
-          <p className={`mt-3 text-sm ${perte ? "text-sim-ink" : "text-white/90"}`}>
-            {verdict}
-          </p>
+          {r.chantiers > 0 && (
+            <p className={`mt-3 text-sm ${perte ? "text-sim-ink" : "text-white/90"}`}>
+              {s.phrase.cac(eur(cac), eur(panier))}
+            </p>
+          )}
           {/* Le marché local est fini. Le dire est un argument de vente :
               « je ne te vends pas un budget que ta ville ne peut pas
               absorber » — pas une faiblesse de l'outil. */}
@@ -550,13 +550,17 @@ export function SimulateurRoi({
               <p className="mt-1 text-2xl font-bold tabular-nums">{dec(r.chantiers)}</p>
             </div>
           </div>
+          {/* Les LEADS, plus le CA : depuis que le héros affiche le CA
+              (2026-07-17), un KPI « CA généré » répétait le même chiffre
+              à 20 px d'écart. Les deux KPI sont les étapes AMONT du
+              héros — appels reçus, puis chantiers signés. */}
           <div className="flex items-center gap-3 px-5 py-4">
             <svg viewBox="0 0 24 24" className="size-7 shrink-0 text-sim-blue" fill="none" aria-hidden>
-              <path d="M17 7a6.5 6.5 0 1 0 0 10M5 10.5h8M5 13.5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M6.5 3.5 9 3l2 4.5-2 1.5a12 12 0 0 0 6 6l1.5-2 4.5 2-.5 2.5a2 2 0 0 1-2 1.5A16.5 16.5 0 0 1 5 6a2 2 0 0 1 1.5-2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div>
-              <p className={LABEL}>{s.kpis.ca}</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums">{eur(r.ca)}</p>
+              <p className={LABEL}>{s.kpis.leads}</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums">{dec(r.leads)}</p>
             </div>
           </div>
         </div>
@@ -725,16 +729,6 @@ export function SimulateurRoi({
                 step={100}
                 onChange={setPanier}
               />
-              <Slider
-                label={s.params.marge}
-                hint={s.params.margeHint}
-                value={marge}
-                display={`${marge} %`}
-                min={5}
-                max={60}
-                step={1}
-                onChange={setMarge}
-              />
               <div className="border border-sim-line bg-white px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className={LABEL}>{s.params.gestion}</span>
@@ -764,9 +758,9 @@ export function SimulateurRoi({
               </thead>
               <tbody>
                 {metiers.map((m, i) => {
-                  /* Chaque métier avec SES presets — conv ET marge.
-                     Comparer 13 métiers à constantes uniformes était
-                     le bug d'origine. */
+                  /* Chaque métier avec SES presets. `marge` reste passée
+                     (le type Params l'exige, elle alimente rr.roi en
+                     interne) mais n'est plus rendue nulle part. */
                   const rr = compute(m, {
                     ...p,
                     panier: m.panier,
@@ -793,12 +787,12 @@ export function SimulateurRoi({
                         rr.leads.toFixed(0),
                         dec(rr.chantiers),
                         eur(rr.ca),
-                        `×${dec(rr.roi)}`,
+                        rr.chantiers ? eur(rr.total / rr.chantiers) : "—",
                       ].map((v, j) => (
                         <td
                           key={j}
                           className={`whitespace-nowrap border-b border-sim-line px-3 py-2 text-right ${
-                            j === 5 ? `font-bold ${rr.roi < 1 ? "text-sim-blue" : ""}` : ""
+                            j === 5 ? `font-bold ${rr.ca < rr.total ? "text-sim-blue" : ""}` : ""
                           }`}
                         >
                           {v}
