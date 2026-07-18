@@ -35,6 +35,7 @@ import {
 const eur = (v: number) =>
   v.toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " €";
 const dec = (v: number) => v.toFixed(1).replace(".", ",");
+const parJour = (v: number) => v / 30;
 
 type Params = {
   geo: number;
@@ -189,11 +190,12 @@ function VilleInline({
   const [hi, setHi] = useState(0);
   const [distant, setDistant] = useState<Commune[]>([]);
   const box = useRef<HTMLSpanElement>(null);
+  const hasQuery = ville.trim().length >= 2;
 
   /* Les 492 grandes villes sont dans le bundle : réponse instantanée,
      le temps que la route (11 ms, mais un aller-retour quand même)
      rapporte les 34 465 villages. Le champ ne clignote jamais vide. */
-  const local = useMemo(() => (open ? suggestCommunes(ville) : []), [ville, open]);
+  const local = useMemo(() => (hasQuery ? suggestCommunes(ville) : []), [ville, hasQuery]);
   const sugg = distant.length ? distant : local;
 
   useEffect(() => {
@@ -207,7 +209,7 @@ function VilleInline({
   /* Couverture totale — villages compris — via la route serveur.
      Débounce court : la route est locale, pas besoin d'attendre. */
   useEffect(() => {
-    if (!open || ville.trim().length < 2) {
+    if (!hasQuery) {
       setDistant([]);
       return;
     }
@@ -227,7 +229,7 @@ function VilleInline({
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [ville, open]);
+  }, [ville, hasQuery]);
 
   const choose = (c: Commune) => {
     onPick(c[0], c);
@@ -235,7 +237,7 @@ function VilleInline({
   };
 
   return (
-    <span ref={box} className="relative inline-block">
+    <span ref={box} className="relative inline-block max-w-full align-baseline">
       <input
         type="text"
         value={ville}
@@ -244,7 +246,9 @@ function VilleInline({
           setOpen(true);
           setHi(0);
         }}
-        onBlur={() => setDistant([])}
+        onBlur={() => {
+          window.setTimeout(() => setDistant([]), 120);
+        }}
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
           if (!sugg.length) return;
@@ -262,22 +266,24 @@ function VilleInline({
         placeholder={simulateur.params.villePlaceholder}
         autoComplete="off"
         aria-label={simulateur.params.ville}
-        size={Math.max(ville.length || 8, 6)}
-        className={INLINE}
+        className={`${INLINE} w-[min(18rem,calc(100vw-3rem))] sm:w-[min(22rem,50vw)]`}
       />
-      {open && sugg.length > 0 && (
-        <ul className="absolute left-0 top-full z-20 mt-1 min-w-64 border border-sim-line bg-white text-left">
+      {hasQuery && sugg.length > 0 && (
+        <ul className="absolute left-0 top-full z-20 mt-1 w-[min(22rem,calc(100vw-3rem))] border border-sim-line bg-white text-left shadow-[0_12px_30px_rgb(15_23_42/0.12)] sm:w-[24rem]">
           {sugg.map((c, i) => (
             <li key={c[0] + c[2]}>
               <button
                 type="button"
                 onMouseEnter={() => setHi(i)}
-                onClick={() => choose(c)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  choose(c);
+                }}
                 className={`flex w-full items-baseline justify-between gap-3 px-3 py-2 text-sm ${
                   i === hi ? "bg-sim-blue text-white" : "text-sim-ink"
                 }`}
               >
-                <span className="font-medium">
+                <span className="min-w-0 flex-1 truncate text-left font-medium">
                   {c[0]} <span className="opacity-60">({c[2]})</span>
                 </span>
                 <span className="shrink-0 text-xs tabular-nums opacity-70">
@@ -323,6 +329,7 @@ export function SimulateurRoi({
   const [partLsa, setPartLsa] = useState(50);
   const nmf = s.gestionFixe;
   const budget = Math.max(0, total - nmf);
+  const budgetJour = parJour(budget);
   const [conv, setConv] = useState(metiers[0].conv);
   const [transfo, setTransfo] = useState(metiers[0].transfo);
   const [panier, setPanier] = useState(metiers[0].panier);
@@ -452,7 +459,7 @@ export function SimulateurRoi({
           {s.phrase.b} <VilleInline ville={ville} onPick={pickVille} />{" "}
           {s.phrase.c}{" "}
           <span className="whitespace-nowrap font-bold text-sim-blue">
-            {eur(total)}
+            {eur(budgetJour)}
           </span>{" "}
           {s.phrase.d}
         </div>
@@ -472,7 +479,7 @@ export function SimulateurRoi({
         />
         <p className="mt-2 flex flex-wrap gap-x-3 text-[11px] text-sim-muted">
           <span className="font-semibold text-sim-ink">
-            {s.phrase.repartition(eur(budget), eur(nmf))}
+            {s.phrase.repartition(eur(budgetJour), eur(budget), eur(nmf))}
           </span>
           <span>{match.raison}</span>
         </p>
@@ -496,7 +503,7 @@ export function SimulateurRoi({
               {" — "}
               {match.commune ? `${match.commune[0]} (${match.commune[2]})` : ville || "France"}
               {" · "}
-              {eur(budget)} de pub + {eur(nmf)} de gestion
+              {eur(budgetJour)}/jour de pub ({eur(budget)}/mois) + {eur(nmf)} de gestion
             </span>
           </p>
         </div>
@@ -524,7 +531,7 @@ export function SimulateurRoi({
           <p
             className={`mt-2 text-sm ${perte ? "text-sim-muted" : "text-white/70"}`}
           >
-            {s.phrase.coutDetail(eur(r.total), eur(budget), eur(nmf))}
+            {s.phrase.coutDetail(eur(r.total), eur(budgetJour), eur(budget), eur(nmf))}
           </p>
           {r.chantiers > 0 && (
             <p className={`mt-3 text-sm ${perte ? "text-sim-ink" : "text-white/90"}`}>
@@ -876,29 +883,73 @@ function Detail({
   ads: number;
   lsa: number;
 }) {
+  const compatibles = s.metiers.filter((m) => m.lsa).map((m) => m.nom);
+  const incompatibles = s.metiers.filter((m) => !m.lsa).map((m) => m.nom);
+
   return (
-    <div className="grid gap-x-10 sm:grid-cols-2">
-      <div>
-        <p className={`mb-1 border-b border-sim-line pb-1 ${LABEL}`}>{s.detail.ads}</p>
-        <Row label={s.detail.bassin} value={`${r.bassin.toLocaleString("fr-FR")} hab.`} />
-        <Row label={s.detail.recherches} value={r.recherchesMotPrincipal.toFixed(0)} />
-        <Row label={s.detail.marche} value={r.recherches.toFixed(0)} />
-        <Row label={s.detail.clicsDispo} value={r.clicsDispo.toFixed(0)} />
-        <Row label={s.detail.cpc} value={`${dec(r.cpc)} €`} />
-        <Row label={s.detail.clics} value={r.clics.toFixed(0)} />
-        <Row label={s.detail.leads} value={dec(r.leadsAds)} />
-        <Row label={s.detail.cpl} value={r.leadsAds ? eur(ads / r.leadsAds) : "—"} />
+    <div>
+      <div className="grid gap-x-10 sm:grid-cols-2">
+        <div>
+          <p className={`mb-1 border-b border-sim-line pb-1 ${LABEL}`}>{s.detail.ads}</p>
+          <Row label={s.detail.bassin} value={`${r.bassin.toLocaleString("fr-FR")} hab.`} />
+          <Row label={s.detail.recherches} value={r.recherchesMotPrincipal.toFixed(0)} />
+          <Row label={s.detail.marche} value={r.recherches.toFixed(0)} />
+          <Row label={s.detail.clicsDispo} value={r.clicsDispo.toFixed(0)} />
+          <Row label={s.detail.cpc} value={`${dec(r.cpc)} €`} />
+          <Row label={s.detail.clics} value={r.clics.toFixed(0)} />
+          <Row label={s.detail.leads} value={dec(r.leadsAds)} />
+          <Row label={s.detail.cpl} value={r.leadsAds ? eur(ads / r.leadsAds) : "—"} />
+        </div>
+        <div>
+          <p className={`mb-1 border-b border-sim-line pb-1 ${LABEL}`}>{s.detail.lsa}</p>
+          <Row label={s.detail.cpa} value={`${metier.cpa} €`} />
+          <Row label={s.detail.leadsLsa} value={dec(r.leadsLsa)} />
+          <Row label={s.detail.cpl} value={r.leadsLsa ? eur(lsa / r.leadsLsa) : "—"} />
+          <Row
+            label={s.detail.cac}
+            value={r.chantiers ? eur(r.total / r.chantiers) : "—"}
+          />
+        </div>
       </div>
-      <div>
-        <p className={`mb-1 border-b border-sim-line pb-1 ${LABEL}`}>{s.detail.lsa}</p>
-        <Row label={s.detail.cpa} value={`${metier.cpa} €`} />
-        <Row label={s.detail.leadsLsa} value={dec(r.leadsLsa)} />
-        <Row label={s.detail.cpl} value={r.leadsLsa ? eur(lsa / r.leadsLsa) : "—"} />
-        <Row
-          label={s.detail.cac}
-          value={r.chantiers ? eur(r.total / r.chantiers) : "—"}
-        />
+
+      <div className="mt-5 border-t border-sim-line pt-4">
+        <p className={`mb-2 ${LABEL}`}>{s.lsaCompat.heading}</p>
+        <p className="mb-3 text-[11px] leading-relaxed text-sim-muted">
+          {s.lsaCompat.note}
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <LsaList title={s.lsaCompat.compatible} items={compatibles} active={metier.lsa} />
+          <LsaList title={s.lsaCompat.incompatible} items={incompatibles} active={!metier.lsa} />
+        </div>
       </div>
+    </div>
+  );
+}
+
+function LsaList({
+  title,
+  items,
+  active,
+}: {
+  title: string;
+  items: string[];
+  active: boolean;
+}) {
+  return (
+    <div className={`border px-3 py-2.5 ${active ? "border-sim-blue bg-sim-panel" : "border-sim-line bg-white"}`}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sim-ink">
+        {title}
+      </p>
+      <ul className="mt-2 flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <li
+            key={item}
+            className="border border-sim-line bg-white px-2 py-1 text-[11px] font-semibold text-sim-muted"
+          >
+            {item}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

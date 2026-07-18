@@ -3,6 +3,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
+  AtSign,
+  Banknote,
+  ChartNoAxesColumnIncreasing,
+  Hammer,
+  Handshake,
+  Mail,
+  MapPin,
+  MousePointerClick,
+  Phone,
+  Puzzle,
+  ShieldCheck,
+  Target,
+  UserRound,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
+import {
   form,
   steps as allSteps,
   visibleSteps,
@@ -35,6 +52,25 @@ function stashContact(answers: Record<string, unknown>) {
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/* Une icône par question : le prospect situe le sujet d'un coup d'œil
+   avant même de lire. Clé = `Step.key` (config/form.ts) — une question
+   sans entrée n'affiche simplement rien. */
+const STEP_ICONS: Record<string, LucideIcon> = {
+  activite: Hammer,
+  ville: MapPin,
+  ca_actuel: ChartNoAxesColumnIncreasing,
+  ca_objectif: Target,
+  problematique: Puzzle,
+  reglable_seul: Wrench,
+  experience_digital: MousePointerClick,
+  ouvert_accompagnement: Handshake,
+  investir_financierement: Banknote,
+  nom_prenom: UserRound,
+  email: Mail,
+  telephone: Phone,
+  instagram: AtSign,
+};
 
 /* ── Reprise de session ──────────────────────────────────────────
    Les réponses partent bien à Supabase en continu (useAuditSession),
@@ -120,7 +156,14 @@ export function AuditForm({
      que s'il n'y a pas de session parente — sinon on créerait deux
      sessions pour un seul visiteur. */
   const own = useAuditSession("/api/audit", { autoVisit: !session });
-  const { progress, submit } = session ?? own;
+  const { progress, submit, mark } = session ?? own;
+
+  /* Jalon `form_opened` : le form s'est réellement affiché — clic CTA sur
+     la LP ou arrivée directe sur /audit. C'est le chaînon manquant du
+     funnel /admin entre « visite » et « première réponse ». */
+  useEffect(() => {
+    mark("form_opened");
+  }, [mark]);
 
   /* La longueur du form se déduit de `known` : court sur le parcours ads
      (le simulateur a déjà parlé), complet en organique. */
@@ -404,6 +447,14 @@ export function AuditForm({
               transition={{ duration: 0.3, ease: EASE }}
             >
               <div className="mb-8">
+                {(() => {
+                  const Icon = STEP_ICONS[step.key];
+                  return Icon ? (
+                    <span className="mb-4 inline-grid size-10 place-items-center rounded-xl border border-primary/20 bg-primary/[0.06] text-primary">
+                      <Icon className="size-5" aria-hidden />
+                    </span>
+                  ) : null;
+                })()}
                 <h1
                   className={`font-helvetica font-bold tracking-tight text-balance text-ink ${questionSizeClass(step.question)}`}
                 >
@@ -422,6 +473,14 @@ export function AuditForm({
                 onCommit={(v?: unknown) => commit(v)}
                 autoFocus
               />
+
+              {/* Rassurance au moment le plus sensible — les coordonnées. */}
+              {(step.type === "email" || step.type === "tel") && (
+                <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+                  <ShieldCheck className="size-3.5 shrink-0 text-primary" aria-hidden />
+                  Utilisé uniquement pour ton audit — jamais revendu, jamais de spam.
+                </p>
+              )}
 
               {error && (
                 <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-accent" role="alert">

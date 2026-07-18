@@ -10,9 +10,9 @@ import {
   SNAP_KEY,
 } from "@/components/form/AuditForm";
 import {
-  SimulateurRoi,
+  SimulateurTicket,
   type SimSnapshot,
-} from "@/components/simulateur/SimulateurRoi";
+} from "@/components/simulateur/SimulateurTicket";
 import { fbTrack } from "@/lib/fpixel";
 import { useAuditSession } from "@/hooks/useAuditSession";
 
@@ -138,7 +138,11 @@ export function AcquisitionLp({
         {before}
         <section id="simulateur" className="px-5 pb-20 sm:px-8 sm:pb-28">
           <div className="mx-auto max-w-6xl">
-            <SimulateurRoi onContinue={start} ctaLabel={site.lp.cta} />
+            <SimulateurTicket
+              onContinue={start}
+              onInteract={() => session.mark("sim_used")}
+              ctaLabel={site.lp.cta}
+            />
           </div>
         </section>
         {after}

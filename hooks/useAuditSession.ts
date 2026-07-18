@@ -73,9 +73,13 @@ async function sendConfirmed(endpoint: string, payload: Payload): Promise<boolea
   return attempt();
 }
 
+/** Jalons du funnel d'entrée — un flag posé une seule fois par session. */
+export type FunnelMark = "sim_used" | "form_opened";
+
 export type AuditSession = {
   progress: (lastStep: number, answers: Payload) => void;
   submit: (answers: Payload) => Promise<boolean>;
+  mark: (event: FunnelMark) => void;
 };
 
 /**
@@ -138,6 +142,22 @@ export function useAuditSession(
     [endpoint]
   );
 
+  /* Dédup côté client : un jalon ne part qu'une fois par session — le
+     visiteur peut toucher 40 fois les sliders, un seul event suffit. */
+  const marked = useRef<Set<FunnelMark>>(new Set());
+  const mark = useCallback(
+    (event: FunnelMark) => {
+      if (!sessionId.current || marked.current.has(event)) return;
+      marked.current.add(event);
+      send(endpoint, {
+        session_id: sessionId.current,
+        visitor_id: visitorId.current,
+        event,
+      });
+    },
+    [endpoint]
+  );
+
   const submit = useCallback(
     (answers: Payload): Promise<boolean> => {
       if (!sessionId.current) return Promise.resolve(false);
@@ -152,5 +172,5 @@ export function useAuditSession(
     [endpoint]
   );
 
-  return { progress, submit };
+  return { progress, submit, mark };
 }

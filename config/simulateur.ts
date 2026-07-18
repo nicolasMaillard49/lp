@@ -184,10 +184,10 @@ export const simulateur = {
        forfait gestion tombait après coup. Le curseur porte maintenant
        ce qu'il SORT vraiment de sa poche, gestion comprise. */
     c: "et je peux mettre",
-    d: "par mois, tout compris.",
+    d: "par jour en publicité.",
     /** Décomposition, sous la phrase — il voit où va son argent. */
-    repartition: (pub: string, gestion: string) =>
-      `${pub} de publicité Google + ${gestion} de gestion NMF`,
+    repartition: (pubJour: string, pubMois: string, gestion: string) =>
+      `${pubJour}/jour de publicité Google (${pubMois}/mois) + ${gestion} de gestion NMF`,
     tropBas: "En dessous, il ne reste plus assez pour la publicité une fois la gestion payée.",
     resultat: "Voilà ce que ça peut générer",
     /* Le CA, pas la marge : c'est le seul chiffre du résultat qui ne
@@ -195,8 +195,8 @@ export const simulateur = {
        « facturés » : on parle de chantiers gagnés, pas d'encaissement. */
     ca: "de chantiers signés, chaque mois",
     /** Sous le chiffre : ce que ça coûte, sans arrondi ni pudeur. */
-    coutDetail: (total: string, pub: string, gestion: string) =>
-      `pour ${total} par mois tout compris — ${pub} de publicité Google + ${gestion} de gestion NMF.`,
+    coutDetail: (total: string, pubJour: string, pub: string, gestion: string) =>
+      `pour ${total} par mois tout compris — ${pubJour}/jour de publicité Google (${pub}/mois) + ${gestion} de gestion NMF.`,
     /* Remplace les verdicts. Un fait, pas un jugement : on ne sait pas
        si c'est rentable POUR LUI (ça dépend de ses charges), mais on
        sait exactement ce qu'un chantier lui coûte en pub. C'est lui
@@ -219,7 +219,7 @@ export const simulateur = {
     metier: "Métier",
     ville: "Ta ville",
     villePlaceholder: "Bordeaux",
-    budget: "Budget publicité / mois",
+    budget: "Budget publicité / jour",
     budgetHint: "Réparti entre Google Ads et Local Services Ads",
     repartition: "Part en Local Services Ads",
     repartitionHint: "Le reste part en Google Ads. Le LSA se paie au contact reçu.",
@@ -280,6 +280,14 @@ export const simulateur = {
     gestion: "Gestion NMF",
     total: "Total investi",
     cac: "Coût d'acquisition par chantier",
+  },
+
+  lsaCompat: {
+    heading: "Compatibilité Local Services Ads",
+    compatible: "Compatibles en France",
+    incompatible: "Non compatibles confirmés",
+    note:
+      "Le simulateur active Local Services Ads uniquement quand la catégorie est confirmée ouverte en France. Sinon, le budget reste en Google Ads classique.",
   },
 
   /* Les verdicts (« Très rentable ×5 ») ont été supprimés le 2026-07-17.

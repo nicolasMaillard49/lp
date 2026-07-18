@@ -41,6 +41,8 @@ interface Row {
   os: string | null;
   country: string | null;
   city: string | null;
+  sim_used: boolean | null;
+  form_opened: boolean | null;
 }
 
 /** Deux plus hautes fourchettes d'objectif = "leads chauds". */
@@ -100,6 +102,10 @@ export async function GET() {
   const uniqueVisitors = new Set(
     rows.map((r) => r.visitor_id).filter(Boolean) as string[]
   ).size;
+  /* `sim_used === true` et non truthy : la colonne peut manquer (migration
+     0007 pas encore passée) — les cartes affichent alors 0, pas NaN. */
+  const simUsed = rows.filter((r) => r.sim_used === true).length;
+  const formOpened = rows.filter((r) => r.form_opened === true).length;
   const started = rows.filter((r) => r.last_step >= 1).length;
   const completedRows = rows.filter((r) => r.status === "completed");
   const completed = completedRows.length;
@@ -224,6 +230,8 @@ export async function GET() {
     totals: {
       visits,
       uniqueVisitors,
+      simUsed,
+      formOpened,
       started,
       completed,
       completionRate,
@@ -250,6 +258,8 @@ function emptyStats(configured: boolean): Stats {
     totals: {
       visits: 0,
       uniqueVisitors: 0,
+      simUsed: 0,
+      formOpened: 0,
       started: 0,
       completed: 0,
       completionRate: 0,

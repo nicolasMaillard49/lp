@@ -72,7 +72,13 @@ export async function POST(req: NextRequest) {
   if (!isUuid(session_id)) {
     return NextResponse.json({ ok: false, error: "session_id invalide" }, { status: 400 });
   }
-  if (event !== "visit" && event !== "progress" && event !== "submit") {
+  if (
+    event !== "visit" &&
+    event !== "progress" &&
+    event !== "submit" &&
+    event !== "sim_used" &&
+    event !== "form_opened"
+  ) {
     return NextResponse.json({ ok: false, error: "event invalide" }, { status: 400 });
   }
 
@@ -110,6 +116,22 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "session_id", ignoreDuplicates: true }
       );
+    if (error) return fail(error.message);
+    return NextResponse.json({ ok: true, stored: true });
+  }
+
+  /* Jalons du funnel d'entrée (migration 0007) — un simple flag posé sur
+     la ligne de session. L'upsert crée la ligne si le `visit` s'est perdu
+     (elle naît alors `status: visited` par défaut de colonne). */
+  if (event === "sim_used" || event === "form_opened") {
+    const { error } = await supabase.from(AUDIT_TABLE).upsert(
+      {
+        session_id,
+        visitor_id: isUuid(visitor_id) ? visitor_id : null,
+        [event]: true,
+      },
+      { onConflict: "session_id" }
+    );
     if (error) return fail(error.message);
     return NextResponse.json({ ok: true, stored: true });
   }

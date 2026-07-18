@@ -163,7 +163,10 @@ export const r2 = {
       title: "Simule ton retour sur investissement",
       desc: "Ton métier, ta ville, ton budget : le simulateur calcule en direct tes leads, tes chantiers et ton retour chaque mois. Pré-rempli avec les moyennes de ton métier.",
       button: "Ouvrir le simulateur",
-      href: "/simulateur",
+      /* `from=prep` : le header de /simulateur n'affiche « Retour à la
+         présentation » que pour les prospects venus d'ici — le trafic
+         ads ne doit voir aucune porte de sortie. */
+      href: "/simulateur?from=prep",
       meta: "Gratuit · Sans inscription · 2 minutes",
     },
     gifts: [

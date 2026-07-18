@@ -223,9 +223,17 @@ function ChoiceGrid({
   columns?: 1 | 2;
   letters?: boolean;
 }) {
+  /* Au-delà de 8 options (les 14 métiers), la liste dépasse l'écran d'un
+     téléphone : scroll interne plutôt que perdre le bouton Continuer et
+     la question hors champ. Sur desktop les 2 colonnes suffisent. */
+  const scrollable = options.length > 8;
   return (
     <div
-      className={`grid gap-2.5 ${columns === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}
+      className={`grid gap-2.5 ${columns === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"} ${
+        scrollable
+          ? "max-h-[52svh] overflow-y-auto overscroll-contain pr-1 sm:max-h-none sm:overflow-visible sm:pr-0"
+          : ""
+      }`}
     >
       {options.map((opt, i) => {
         const selected = value === opt;

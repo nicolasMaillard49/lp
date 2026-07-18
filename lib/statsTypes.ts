@@ -79,6 +79,10 @@ export interface Stats {
   totals: {
     visits: number;
     uniqueVisitors: number;
+    /** A manipulé le simulateur (métier, ville ou slider) — flag sim_used. */
+    simUsed: number;
+    /** Le formulaire s'est affiché (clic CTA ou /audit direct) — flag form_opened. */
+    formOpened: number;
     started: number;
     completed: number;
     completionRate: number; // 0..1 (completed / started)

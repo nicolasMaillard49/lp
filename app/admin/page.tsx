@@ -210,6 +210,22 @@ function Content({ stats, tab }: { stats: Stats; tab: Tab }) {
         </div>
       </div>
 
+      {/* Funnel d'entrée — les deux jalons entre l'arrivée et la première
+          réponse : sans eux, impossible de savoir si le trafic ignore le
+          simu ou décroche au moment d'ouvrir le form. */}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SmallLightCard
+          label={`Ont manipulé le simulateur · ${t.visits ? pct(t.simUsed / t.visits) : "—"} des visites`}
+          value={String(t.simUsed)}
+          icon={<SlidersIcon />}
+        />
+        <SmallLightCard
+          label={`Ont ouvert le formulaire · ${t.visits ? pct(t.formOpened / t.visits) : "—"} des visites`}
+          value={String(t.formOpened)}
+          icon={<FormIcon />}
+        />
+      </div>
+
       {/* Courbe temporelle */}
       <SectionCard title="Visites & soumissions dans le temps">
         <TimeChart points={stats.timeseries} />
@@ -386,6 +402,15 @@ function UsersIcon() {
     <svg viewBox="0 0 20 20" fill="none" className="size-5">
       <circle cx="7.5" cy="7" r="3" stroke="currentColor" strokeWidth="1.6" />
       <path d="M2.5 16c.7-2.6 2.7-4 5-4s4.3 1.4 5 4M13 4.3a3 3 0 0 1 0 5.4M15 12.4c1.3.6 2.2 1.8 2.6 3.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function SlidersIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className="size-5">
+      <path d="M3 6h14M3 14h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="8" cy="6" r="2" fill="currentColor" />
+      <circle cx="13" cy="14" r="2" fill="currentColor" />
     </svg>
   );
 }

@@ -48,12 +48,20 @@
   #estimation * {
     visibility: visible !important;
   }
+  /* UNE seule page A4 : même empilement qu'à l'écran (CA potentiel →
+     Réglages → Ticket → Canaux), simplement réduit via `zoom` — qui,
+     contrairement à transform, réduit aussi la hauteur de mise en page
+     (sinon le document garde sa hauteur d'origine et déborde sur une
+     2ᵉ page). Avec width:100%, Chrome résout la largeur AVANT le zoom :
+     le contenu dispose de toute la largeur imprimable, rien n'est rogné
+     à droite (ce que faisaient zoom+width% ou transform:scale). */
   #estimation {
     position: absolute !important;
     left: 0;
     top: 0;
     width: 100%;
     border: 0 !important;
+    zoom: 0.62;
   }
   /* Sans ça le navigateur supprime tous les aplats à l'impression :
      le bloc résultat bleu sortait en blanc sur blanc, et le PDF ne
@@ -214,6 +222,12 @@
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(22px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ticket-rise {
+  0% { opacity: 0; transform: translateY(18px) scale(0.92); }
+  62% { opacity: 1; transform: translateY(-5px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .enter {
   animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
