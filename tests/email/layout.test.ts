@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bandeau, big, esc, fmtEuro, layout } from "@/lib/email/layout";
+import { bandeau, big, button, esc, fmtEuro, layout, para, row } from "@/lib/email/layout";
 
 describe("esc", () => {
   it("échappe le HTML injecté", () => {
@@ -18,13 +18,11 @@ describe("fmtEuro", () => {
 });
 
 describe("bandeau", () => {
-  it("porte le titre et garde un repli solide pour Outlook", () => {
+  it("porte le titre et utilise le bleu solide du simulateur", () => {
     const html = bandeau("Il te reste " + big("892 €"), "Plombier à Bordeaux");
     expect(html).toContain("892 €");
     expect(html).toContain("Plombier à Bordeaux");
-    // bgcolor = ce que voit Outlook, qui ignore linear-gradient
-    expect(html).toContain('bgcolor="#FF7149"');
-    expect(html).toContain("linear-gradient");
+    expect(html).toContain('bgcolor="#075ad8"');
   });
 
   it("échappe le sous-titre", () => {
@@ -33,6 +31,23 @@ describe("bandeau", () => {
 });
 
 describe("layout", () => {
+  it("reprend la palette bleue du simulateur sans gradient ni corail", () => {
+    const html = layout({
+      preheader: "Aperçu",
+      bande: bandeau("Ton étude", "Plombier à Bordeaux"),
+      body: `${para("Tes chiffres.")}<table>${row("Budget", "1 500 €")}</table>${button("https://exemple.fr", "Continuer")}`,
+    }).toLowerCase();
+
+    expect(html).toContain("font-family:helvetica,arial,sans-serif");
+    expect(html).toContain("#075ad8");
+    expect(html).toContain("#071a33");
+    expect(html).toContain("#ffffff");
+    expect(html).toContain("#f7f9fc");
+    expect(html).toContain("#d8e3f2");
+    expect(html).not.toContain("gradient");
+    expect(html).not.toMatch(/#(?:ff6d77|ff7149|ffa043|d33a32)/);
+  });
+
   it("enveloppe bandeau et corps, footer sans désinscription par défaut", () => {
     const html = layout({ preheader: "Aperçu", bande: "<tr><td>BANDE</td></tr>", body: "<p>CORPS</p>" });
     expect(html).toContain("BANDE");

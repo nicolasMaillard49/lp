@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { site } from "@/config/site";
 import { simulateur } from "@/config/simulateur";
 import { SimHeader } from "@/components/simulateur/SimHeader";
-import { SimulateurTicket } from "@/components/simulateur/SimulateurTicket";
+import { StandaloneSimulator } from "@/components/simulateur/StandaloneSimulator";
 import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export default function SimulateurPage() {
           </div>
 
           <div className="mt-6">
-            <SimulateurTicket ctaLabel={site.lp.cta} ctaHref="/audit" />
+            <StandaloneSimulator ctaLabel={site.lp.cta} />
           </div>
         </div>
       </main>

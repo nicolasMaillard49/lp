@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { simulateur } from "@/config/simulateur";
 import { fbTrackCustom } from "@/lib/fpixel";
+import { isValidEstimateEmail, normalizeEstimateEmail } from "@/lib/activation";
 
 /* ──────────────────────────────────────────────────────────────
    « Garde ton étude » — le filet sous le funnel.
@@ -29,25 +30,35 @@ export type { EtudeSnapshot };
 
 /* Même philosophie que côté serveur : laxiste — rejeter un email
    valide coûte un prospect. */
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-export function EmailEtude({ snapshot }: { snapshot: EtudeSnapshot }) {
+export function EmailEtude({
+  snapshot,
+  onCapture,
+}: {
+  snapshot: EtudeSnapshot;
+  onCapture?: (email: string, snapshot: EtudeSnapshot) => Promise<boolean>;
+}) {
   const t = simulateur.etude;
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const value = email.trim();
-    if (!EMAIL_RE.test(value) || state === "sending") return;
+    const value = normalizeEstimateEmail(email);
+    if (!isValidEstimateEmail(value) || state === "sending") return;
     setState("sending");
     try {
-      const res = await fetch("/api/etude", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: value, snapshot }),
-      });
-      if (!res.ok) throw new Error();
+      const stored = onCapture
+        ? await onCapture(value, snapshot)
+        : await fetch("/api/etude", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: value, snapshot }),
+          }).then(async (res) => {
+            if (!res.ok) return false;
+            const json = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+            return json?.ok === true;
+          });
+      if (!stored) throw new Error("capture non confirmée");
       /* Audience Meta « a laissé son email » — plus chaude qu'un simple
          visiteur du simulateur, moins qu'un Lead : à relancer en priorité. */
       fbTrackCustom("EtudeEmail", {

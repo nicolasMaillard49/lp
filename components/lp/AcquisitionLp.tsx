@@ -13,7 +13,9 @@ import {
   SimulateurTicket,
   type SimSnapshot,
 } from "@/components/simulateur/SimulateurTicket";
-import { fbTrack } from "@/lib/fpixel";
+import { fbTrack, fbTrackCustom } from "@/lib/fpixel";
+import type { ActivationMark } from "@/lib/activation";
+import type { EtudeSnapshot } from "@/lib/email/templates/etude";
 import { useAuditSession } from "@/hooks/useAuditSession";
 
 const eur = (v: number) =>
@@ -44,8 +46,40 @@ export function AcquisitionLp({
      On était aveugle sur exactement l'endroit où le trafic se perd —
      entre l'arrivée et le CTA. La session est passée à AuditForm pour
      que le même `session_id` porte visit → progress → submit. */
-  const session = useAuditSession();
+  const session = useAuditSession("/api/audit", { entrypoint: "simulator" });
   const [snap, setSnap] = useState<SimSnapshot | null>(null);
+  const markSession = session.mark;
+  const requestEstimate = session.requestEstimate;
+
+  const markActivation = useCallback(
+    (event: ActivationMark) => {
+      markSession(event);
+      if (event === "sim_used") {
+        fbTrackCustom("NmfSimulatorUsed", { content_name: "simulateur-roi" });
+      } else if (event === "result_viewed") {
+        fbTrack("ViewContent", { content_name: "estimation-result" });
+        fbTrackCustom("SimulateurResultat", { content_name: "estimation-result" });
+      } else if (event === "cta_clicked") {
+        fbTrackCustom("NmfCtaClicked", { content_name: "simulateur-roi" });
+      }
+    },
+    [markSession]
+  );
+
+  const saveEstimate = useCallback(
+    async (email: string, estimate: SimSnapshot, snapshot: EtudeSnapshot) => {
+      return requestEstimate(email, {
+        activite: estimate.metier,
+        ville: estimate.ville,
+        budget_ads: estimate.ads,
+        budget_lsa: estimate.lsa,
+        sim_panier: estimate.panier,
+        sim_transfo: estimate.transfo,
+        sim_ca_estime: Math.round(estimate.ca),
+      }, snapshot);
+    },
+    [requestEstimate]
+  );
 
   /* ViewContent à l'arrivée sur le simulateur : donne à Meta un signal
      d'intention en HAUT du funnel (avant InitiateCheckout), exploitable
@@ -136,11 +170,13 @@ export function AcquisitionLp({
     return (
       <>
         {before}
-        <section id="simulateur" className="px-5 pb-20 sm:px-8 sm:pb-28">
+        <section id="simulateur" className="bg-[#f7f9fc] px-5 pb-20 sm:px-8 sm:pb-28">
           <div className="mx-auto max-w-6xl">
             <SimulateurTicket
               onContinue={start}
-              onInteract={() => session.mark("sim_used")}
+              onInteract={() => markActivation("sim_used")}
+              onMark={markActivation}
+              onEstimateRequested={saveEstimate}
               ctaLabel={site.lp.cta}
             />
           </div>

@@ -26,7 +26,41 @@ export interface TimePoint {
   submissions: number;
 }
 
+export type ActivationMetricKey =
+  | "visits"
+  | "simUsed"
+  | "resultViewed"
+  | "ctaViewed"
+  | "ctaClicked"
+  | "estimateRequested"
+  | "formOpened"
+  | "started"
+  | "completed";
+
+export interface ActivationFunnelStep {
+  key: ActivationMetricKey;
+  label: string;
+  count: number;
+  rateFromPrevious: number | null; // 0..1, null pour la première étape
+  rateFromVisits: number; // 0..1
+}
+
+export interface ActivationTimePoint {
+  date: string; // YYYY-MM-DD, cohorte créée ce jour-là
+  visits: number;
+  uniqueVisitors: number;
+  simUsed: number;
+  resultViewed: number;
+  ctaViewed: number;
+  ctaClicked: number;
+  estimateRequested: number;
+  formOpened: number;
+  started: number;
+  completed: number;
+}
+
 export interface LeadRow {
+  id: string;
   created_at: string;
   nom_prenom: string | null;
   email: string | null;
@@ -40,6 +74,16 @@ export interface LeadRow {
   experience_digital: number | null;
   ouvert_accompagnement: boolean | null;
   investir_financierement: boolean | null;
+  utm_campaign: string | null;
+}
+
+export interface EstimateRow {
+  id: string;
+  requested_at: string;
+  email: string | null;
+  activite: string | null;
+  ville: string | null;
+  sim_ca_estime: number | null;
   utm_campaign: string | null;
 }
 
@@ -76,6 +120,7 @@ export interface R2Stats {
 
 export interface Stats {
   configured: boolean;
+  activationMeasuredSince: string | null;
   totals: {
     visits: number;
     uniqueVisitors: number;
@@ -83,12 +128,21 @@ export interface Stats {
     simUsed: number;
     /** Le formulaire s'est affiché (clic CTA ou /audit direct) — flag form_opened. */
     formOpened: number;
+    scroll25: number;
+    scroll50: number;
+    scroll75: number;
+    resultViewed: number;
+    ctaViewed: number;
+    ctaClicked: number;
+    estimateRequested: number;
     started: number;
     completed: number;
     completionRate: number; // 0..1 (completed / started)
     medianDurationSec: number | null;
     hotLeads: number;
   };
+  activationFunnel: ActivationFunnelStep[];
+  activationTimeseries: ActivationTimePoint[];
   funnel: FunnelStep[];
   answerInsights: AnswerInsight[];
   sources: Bucket[];
@@ -99,4 +153,5 @@ export interface Stats {
   countries: Bucket[];
   timeseries: TimePoint[];
   leads: LeadRow[];
+  estimates: EstimateRow[];
 }

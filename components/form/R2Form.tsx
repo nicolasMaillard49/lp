@@ -38,7 +38,7 @@ function validate(step: Step, value: unknown): string | null {
 /** Questionnaire de préparation du R2 — même mécanique que le formulaire R1. */
 export function R2Form() {
   const reduce = useReducedMotion();
-  const { progress, submit } = useAuditSession("/api/r2");
+  const { progress, submit } = useAuditSession("/api/r2", { entrypoint: "r2" });
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});

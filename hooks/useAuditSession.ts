@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import type { ActivationMark, AuditEntrypoint } from "@/lib/activation";
+import type { EtudeSnapshot } from "@/lib/email/templates/etude";
 
 const VISITOR_KEY = "nmf_audit_visitor";
 
@@ -73,13 +75,17 @@ async function sendConfirmed(endpoint: string, payload: Payload): Promise<boolea
   return attempt();
 }
 
-/** Jalons du funnel d'entrée — un flag posé une seule fois par session. */
-export type FunnelMark = "sim_used" | "form_opened";
+export type EstimateAnswers = Record<string, unknown>;
 
 export type AuditSession = {
   progress: (lastStep: number, answers: Payload) => void;
   submit: (answers: Payload) => Promise<boolean>;
-  mark: (event: FunnelMark) => void;
+  mark: (event: ActivationMark) => void;
+  requestEstimate: (
+    email: string,
+    answers: EstimateAnswers,
+    snapshot: EtudeSnapshot
+  ) => Promise<boolean>;
 };
 
 /**
@@ -98,7 +104,10 @@ export type AuditSession = {
  */
 export function useAuditSession(
   endpoint: string = "/api/audit",
-  { autoVisit = true }: { autoVisit?: boolean } = {}
+  {
+    autoVisit = true,
+    entrypoint = "audit",
+  }: { autoVisit?: boolean; entrypoint?: AuditEntrypoint } = {}
 ): AuditSession {
   const sessionId = useRef<string>("");
   const visitorId = useRef<string>("");
@@ -123,9 +132,10 @@ export function useAuditSession(
       session_id: sessionId.current,
       visitor_id: visitorId.current,
       event: "visit",
+      entrypoint,
       attribution: readAttribution(),
     });
-  }, [endpoint, autoVisit]);
+  }, [endpoint, autoVisit, entrypoint]);
 
   const progress = useCallback(
     (lastStep: number, answers: Payload) => {
@@ -135,27 +145,43 @@ export function useAuditSession(
         session_id: sessionId.current,
         visitor_id: visitorId.current,
         event: "progress",
+        entrypoint,
         last_step: maxStep.current,
         answers,
       });
     },
-    [endpoint]
+    [endpoint, entrypoint]
   );
 
   /* Dédup côté client : un jalon ne part qu'une fois par session — le
      visiteur peut toucher 40 fois les sliders, un seul event suffit. */
-  const marked = useRef<Set<FunnelMark>>(new Set());
+  const marked = useRef<Set<ActivationMark>>(new Set());
   const mark = useCallback(
-    (event: FunnelMark) => {
+    (event: ActivationMark) => {
       if (!sessionId.current || marked.current.has(event)) return;
       marked.current.add(event);
       send(endpoint, {
         session_id: sessionId.current,
         visitor_id: visitorId.current,
         event,
+        entrypoint,
       });
     },
-    [endpoint]
+    [endpoint, entrypoint]
+  );
+
+  const requestEstimate = useCallback(
+    (email: string, answers: EstimateAnswers, snapshot: EtudeSnapshot): Promise<boolean> => {
+      if (!sessionId.current) return Promise.resolve(false);
+      return sendConfirmed("/api/etude", {
+        session_id: sessionId.current,
+        visitor_id: visitorId.current,
+        email,
+        answers,
+        snapshot,
+      });
+    },
+    []
   );
 
   const submit = useCallback(
@@ -165,12 +191,13 @@ export function useAuditSession(
         session_id: sessionId.current,
         visitor_id: visitorId.current,
         event: "submit",
+        entrypoint,
         answers,
         duration_seconds: Math.round((Date.now() - startedAt.current) / 1000),
       });
     },
-    [endpoint]
+    [endpoint, entrypoint]
   );
 
-  return { progress, submit, mark };
+  return { progress, submit, mark, requestEstimate };
 }

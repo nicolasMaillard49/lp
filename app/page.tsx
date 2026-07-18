@@ -27,15 +27,17 @@ export const metadata: Metadata = {
  */
 export default function Home() {
   return (
-    <AcquisitionLp
-      before={<LpHero />}
-      after={
-        <>
-          <Proof />
-          <Method />
-          <Footer />
-        </>
-      }
-    />
+    <main className="simulator-page">
+      <AcquisitionLp
+        before={<LpHero />}
+        after={
+          <>
+            <Proof />
+            <Method />
+            <Footer />
+          </>
+        }
+      />
+    </main>
   );
 }

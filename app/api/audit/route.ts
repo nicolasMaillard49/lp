@@ -6,6 +6,10 @@ import { sendEmail } from "@/lib/email/client";
 import { EMAIL_LOG_TABLE, logEmail } from "@/lib/email/log";
 import { confirmationEmail } from "@/lib/email/templates/confirmation";
 import { notifInterneEmail } from "@/lib/email/templates/notif-interne";
+import {
+  isActivationMark,
+  isAuditEntrypoint,
+} from "@/lib/activation";
 
 export const runtime = "nodejs";
 
@@ -76,8 +80,7 @@ export async function POST(req: NextRequest) {
     event !== "visit" &&
     event !== "progress" &&
     event !== "submit" &&
-    event !== "sim_used" &&
-    event !== "form_opened"
+    !isActivationMark(event)
   ) {
     return NextResponse.json({ ok: false, error: "event invalide" }, { status: 400 });
   }
@@ -111,6 +114,7 @@ export async function POST(req: NextRequest) {
           visitor_id: isUuid(visitor_id) ? visitor_id : null,
           status: "visited",
           last_step: 0,
+          entrypoint: isAuditEntrypoint(body.entrypoint) ? body.entrypoint : "audit",
           ...ctx,
           ...attr,
         },
@@ -123,13 +127,15 @@ export async function POST(req: NextRequest) {
   /* Jalons du funnel d'entrée (migration 0007) — un simple flag posé sur
      la ligne de session. L'upsert crée la ligne si le `visit` s'est perdu
      (elle naît alors `status: visited` par défaut de colonne). */
-  if (event === "sim_used" || event === "form_opened") {
+  if (isActivationMark(event)) {
+    const activationPayload: Record<string, unknown> = {
+      session_id,
+      visitor_id: isUuid(visitor_id) ? visitor_id : null,
+      [event]: true,
+    };
+    if (isAuditEntrypoint(body.entrypoint)) activationPayload.entrypoint = body.entrypoint;
     const { error } = await supabase.from(AUDIT_TABLE).upsert(
-      {
-        session_id,
-        visitor_id: isUuid(visitor_id) ? visitor_id : null,
-        [event]: true,
-      },
+      activationPayload,
       { onConflict: "session_id" }
     );
     if (error) return fail(error.message);
@@ -147,6 +153,7 @@ export async function POST(req: NextRequest) {
     ...answers,
     ...sim,
   };
+  if (isAuditEntrypoint(body.entrypoint)) payload.entrypoint = body.entrypoint;
 
   if (event === "submit") {
     payload.status = "completed";

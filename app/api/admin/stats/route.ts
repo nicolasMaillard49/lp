@@ -8,12 +8,21 @@ import type {
   AnswerInsight,
   TimePoint,
   LeadRow,
+  EstimateRow,
+  ActivationFunnelStep,
+  ActivationMetricKey,
+  ActivationTimePoint,
 } from "@/lib/statsTypes";
+import {
+  isSimulatorActivationSession,
+} from "@/lib/activation";
 
 export const runtime = "nodejs";
 
 interface Row {
+  id: string;
   session_id: string;
+  entrypoint: string | null;
   visitor_id: string | null;
   status: string;
   last_step: number;
@@ -43,7 +52,38 @@ interface Row {
   city: string | null;
   sim_used: boolean | null;
   form_opened: boolean | null;
+  scroll_25: boolean | null;
+  scroll_50: boolean | null;
+  scroll_75: boolean | null;
+  result_viewed: boolean | null;
+  cta_viewed: boolean | null;
+  cta_clicked: boolean | null;
+  estimate_requested: boolean | null;
+  estimate_requested_at: string | null;
+  sim_ca_estime: number | null;
 }
+
+const ACTIVATION_STEPS: ReadonlyArray<{
+  key: ActivationMetricKey;
+  label: string;
+}> = [
+  { key: "visits", label: "Visites" },
+  { key: "simUsed", label: "Simulateur utilisé" },
+  { key: "resultViewed", label: "Résultat vu" },
+  { key: "ctaViewed", label: "CTA vu" },
+  { key: "ctaClicked", label: "CTA cliqué" },
+  { key: "estimateRequested", label: "Estimation demandée" },
+  { key: "formOpened", label: "Formulaire ouvert" },
+  { key: "started", label: "Questionnaire commencé" },
+  { key: "completed", label: "Questionnaire complété" },
+];
+
+const PARIS_DAY = new Intl.DateTimeFormat("fr-CA", {
+  timeZone: "Europe/Paris",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 /** Deux plus hautes fourchettes d'objectif = "leads chauds". */
 const HOT_OBJECTIVES = new Set([
@@ -78,6 +118,26 @@ function median(nums: number[]): number | null {
   return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
 }
 
+function dayKey(timestamp: string): string {
+  return PARIS_DAY.format(new Date(timestamp));
+}
+
+function buildActivationFunnel(
+  counts: Record<ActivationMetricKey, number>
+): ActivationFunnelStep[] {
+  return ACTIVATION_STEPS.map(({ key, label }, index) => {
+    const count = counts[key];
+    const previous = index === 0 ? null : counts[ACTIVATION_STEPS[index - 1].key];
+    return {
+      key,
+      label,
+      count,
+      rateFromPrevious: previous == null ? null : previous > 0 ? count / previous : 0,
+      rateFromVisits: counts.visits > 0 ? count / counts.visits : 0,
+    };
+  });
+}
+
 export async function GET() {
   const supabase = getSupabase();
   if (!supabase) {
@@ -96,6 +156,8 @@ export async function GET() {
   }
 
   const rows = (data ?? []) as Row[];
+  const activationRows = rows.filter((r) => isSimulatorActivationSession(r.entrypoint));
+  const activationMeasuredSince = activationRows.at(-1)?.created_at ?? null;
 
   // ── Totaux ──
   const visits = rows.length;
@@ -106,6 +168,13 @@ export async function GET() {
      0007 pas encore passée) — les cartes affichent alors 0, pas NaN. */
   const simUsed = rows.filter((r) => r.sim_used === true).length;
   const formOpened = rows.filter((r) => r.form_opened === true).length;
+  const scroll25 = rows.filter((r) => r.scroll_25 === true).length;
+  const scroll50 = rows.filter((r) => r.scroll_50 === true).length;
+  const scroll75 = rows.filter((r) => r.scroll_75 === true).length;
+  const resultViewed = rows.filter((r) => r.result_viewed === true).length;
+  const ctaViewed = rows.filter((r) => r.cta_viewed === true).length;
+  const ctaClicked = rows.filter((r) => r.cta_clicked === true).length;
+  const estimateRequested = rows.filter((r) => r.estimate_requested === true).length;
   const started = rows.filter((r) => r.last_step >= 1).length;
   const completedRows = rows.filter((r) => r.status === "completed");
   const completed = completedRows.length;
@@ -116,6 +185,66 @@ export async function GET() {
   const hotLeads = completedRows.filter(
     (r) => r.ca_objectif && HOT_OBJECTIVES.has(r.ca_objectif) && r.reglable_seul === false
   ).length;
+
+  const activationFunnel = buildActivationFunnel({
+    visits: activationRows.length,
+    simUsed: activationRows.filter((r) => r.sim_used === true).length,
+    resultViewed: activationRows.filter((r) => r.result_viewed === true).length,
+    ctaViewed: activationRows.filter((r) => r.cta_viewed === true).length,
+    ctaClicked: activationRows.filter((r) => r.cta_clicked === true).length,
+    estimateRequested: activationRows.filter((r) => r.estimate_requested === true).length,
+    formOpened: activationRows.filter((r) => r.form_opened === true).length,
+    started: activationRows.filter((r) => r.last_step >= 1).length,
+    completed: activationRows.filter((r) => r.status === "completed").length,
+  });
+
+  // Les booléens n'ont pas tous leur propre timestamp : la vue quotidienne
+  // suit donc des cohortes de sessions créées le même jour (heure de Paris).
+  const activationByDay = new Map<
+    string,
+    Omit<ActivationTimePoint, "date" | "uniqueVisitors"> & { visitors: Set<string> }
+  >();
+  for (const r of activationRows) {
+    const date = dayKey(r.created_at);
+    const point = activationByDay.get(date) ?? {
+      visits: 0,
+      visitors: new Set<string>(),
+      simUsed: 0,
+      resultViewed: 0,
+      ctaViewed: 0,
+      ctaClicked: 0,
+      estimateRequested: 0,
+      formOpened: 0,
+      started: 0,
+      completed: 0,
+    };
+    point.visits++;
+    if (r.visitor_id) point.visitors.add(r.visitor_id);
+    if (r.sim_used === true) point.simUsed++;
+    if (r.result_viewed === true) point.resultViewed++;
+    if (r.cta_viewed === true) point.ctaViewed++;
+    if (r.cta_clicked === true) point.ctaClicked++;
+    if (r.estimate_requested === true) point.estimateRequested++;
+    if (r.form_opened === true) point.formOpened++;
+    if (r.last_step >= 1) point.started++;
+    if (r.status === "completed") point.completed++;
+    activationByDay.set(date, point);
+  }
+  const activationTimeseries: ActivationTimePoint[] = [...activationByDay.entries()]
+    .map(([date, point]) => ({
+      date,
+      visits: point.visits,
+      uniqueVisitors: point.visitors.size,
+      simUsed: point.simUsed,
+      resultViewed: point.resultViewed,
+      ctaViewed: point.ctaViewed,
+      ctaClicked: point.ctaClicked,
+      estimateRequested: point.estimateRequested,
+      formOpened: point.formOpened,
+      started: point.started,
+      completed: point.completed,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   // ── Funnel (drop-off par question) ──
   const funnel: FunnelStep[] = steps.map((s, i) => {
@@ -200,8 +329,8 @@ export async function GET() {
     tsMap.set(date, cur);
   };
   for (const r of rows) {
-    bump(r.created_at.slice(0, 10), "visits");
-    if (r.completed_at) bump(r.completed_at.slice(0, 10), "submissions");
+    bump(dayKey(r.created_at), "visits");
+    if (r.completed_at) bump(dayKey(r.completed_at), "submissions");
   }
   const timeseries: TimePoint[] = [...tsMap.entries()]
     .map(([date, v]) => ({ date, ...v }))
@@ -209,6 +338,7 @@ export async function GET() {
 
   // ── Table des leads (complétés) ──
   const leads: LeadRow[] = completedRows.slice(0, 500).map((r) => ({
+    id: r.id,
     created_at: r.created_at,
     nom_prenom: r.nom_prenom,
     email: r.email,
@@ -225,19 +355,47 @@ export async function GET() {
     utm_campaign: r.utm_campaign,
   }));
 
+  const estimates: EstimateRow[] = rows
+    .filter((r) => r.estimate_requested === true && r.status !== "completed")
+    .sort((a, b) =>
+      (b.estimate_requested_at ?? b.created_at).localeCompare(
+        a.estimate_requested_at ?? a.created_at
+      )
+    )
+    .slice(0, 500)
+    .map((r) => ({
+      id: r.id,
+      requested_at: r.estimate_requested_at ?? r.created_at,
+      email: r.email,
+      activite: r.activite,
+      ville: r.ville,
+      sim_ca_estime: r.sim_ca_estime,
+      utm_campaign: r.utm_campaign,
+    }));
+
   const stats: Stats = {
     configured: true,
+    activationMeasuredSince,
     totals: {
       visits,
       uniqueVisitors,
       simUsed,
       formOpened,
+      scroll25,
+      scroll50,
+      scroll75,
+      resultViewed,
+      ctaViewed,
+      ctaClicked,
+      estimateRequested,
       started,
       completed,
       completionRate,
       medianDurationSec,
       hotLeads,
     },
+    activationFunnel,
+    activationTimeseries,
     funnel,
     answerInsights,
     sources,
@@ -248,6 +406,7 @@ export async function GET() {
     countries,
     timeseries,
     leads,
+    estimates,
   };
   return NextResponse.json(stats);
 }
@@ -255,17 +414,37 @@ export async function GET() {
 function emptyStats(configured: boolean): Stats {
   return {
     configured,
+    activationMeasuredSince: null,
     totals: {
       visits: 0,
       uniqueVisitors: 0,
       simUsed: 0,
       formOpened: 0,
+      scroll25: 0,
+      scroll50: 0,
+      scroll75: 0,
+      resultViewed: 0,
+      ctaViewed: 0,
+      ctaClicked: 0,
+      estimateRequested: 0,
       started: 0,
       completed: 0,
       completionRate: 0,
       medianDurationSec: null,
       hotLeads: 0,
     },
+    activationFunnel: buildActivationFunnel({
+      visits: 0,
+      simUsed: 0,
+      resultViewed: 0,
+      ctaViewed: 0,
+      ctaClicked: 0,
+      estimateRequested: 0,
+      formOpened: 0,
+      started: 0,
+      completed: 0,
+    }),
+    activationTimeseries: [],
     funnel: steps.map((s, i) => ({
       step: i + 1,
       label: s.question,
@@ -281,5 +460,6 @@ function emptyStats(configured: boolean): Stats {
     countries: [],
     timeseries: [],
     leads: [],
+    estimates: [],
   };
 }

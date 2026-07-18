@@ -123,6 +123,13 @@
   }
 }
 
+/* La landing du simulateur forme une seule interface typographique. */
+.simulator-page,
+.simulator-page * {
+  font-family: var(--font-helvetica);
+  letter-spacing: 0;
+}
+
 /* Grain texturé (bruit fractal SVG) — surface tactile « papier premium ».
    Posé au-dessus des courbes de niveau embossées pour renforcer le relief. */
 .texture-grain {

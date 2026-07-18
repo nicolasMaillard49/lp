@@ -42,12 +42,10 @@ export const site = {
    * n'a aucun sens pour un inconnu qui découvre l'agence.
    */
   lp: {
-    eyebrow: "Artisans du bâtiment",
-    title: "Combien de chantiers tu laisses à ton concurrent chaque mois ?",
-    /* Une seule ligne, mais avec le BÉNÉFICE dedans (audit marketing
-       2026-07-15) : « le calcul » tout seul ne disait pas de quoi. */
+    eyebrow: "Artisans du bâtiment · CA estimé",
+    title: "Combien une campagne NMF peut te rapporter ?",
     subtitle:
-      "Ce que Google Ads peut te rapporter — ton calcul, sous tes yeux, en 2 minutes.",
+      "Ajoute ton métier, ta ville et ton budget. Le chiffre de CA monte en direct.",
     reassurance: "Gratuit · Sans inscription · Aucun engagement",
     /* Seule preuve au-dessus du pli — un artisan méfiant a besoin d'un
        signal de confiance AVANT le simulateur. Source : PDF ressource. */

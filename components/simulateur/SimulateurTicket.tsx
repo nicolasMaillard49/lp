@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Banknote,
   BriefcaseBusiness,
@@ -19,6 +19,9 @@ import {
   Target,
 } from "lucide-react";
 import { EmailEtude } from "@/components/simulateur/EmailEtude";
+import type { EtudeSnapshot } from "@/lib/email/templates/etude";
+import { useActivationTracking } from "@/hooks/useActivationTracking";
+import type { ActivationMark } from "@/lib/activation";
 import {
   bassinPour,
   simulateur,
@@ -133,6 +136,8 @@ const CA_INITIAL = (() => {
 export function SimulateurTicket({
   onContinue,
   onInteract,
+  onMark,
+  onEstimateRequested,
   ctaLabel,
   ctaHref,
 }: {
@@ -140,6 +145,12 @@ export function SimulateurTicket({
   /** Premier réglage touché (métier, ville, slider) — appelé UNE fois.
       Sert au jalon `sim_used` du funnel /admin. */
   onInteract?: () => void;
+  onMark?: (event: ActivationMark) => void;
+  onEstimateRequested?: (
+    email: string,
+    snap: SimSnapshot,
+    snapshot: EtudeSnapshot
+  ) => Promise<boolean>;
   ctaLabel?: string;
   ctaHref?: string;
 } = {}) {
@@ -155,10 +166,23 @@ export function SimulateurTicket({
   const [variantes, setVariantes] = useState(4);
   const [date, setDate] = useState<string | null>(null);
   const [animatedCa, setAnimatedCa] = useState(CA_INITIAL);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [conversionReached, setConversionReached] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const conversionRef = useRef<HTMLDivElement>(null);
+  const estimateRef = useRef<HTMLDivElement>(null);
   /* Miroir de animatedCa lisible hors cycle React : le restart
      d'animation (retour d'onglet caché) doit repartir de la valeur
      réellement affichée, pas d'une closure périmée. */
   const animatedCaRef = useRef(CA_INITIAL);
+  const markConversionReached = useCallback(() => setConversionReached(true), []);
+
+  useActivationTracking({
+    mark: hasInteracted ? onMark : undefined,
+    resultRef,
+    ctaRef: conversionRef,
+    onCtaVisible: markConversionReached,
+  });
 
   useEffect(() => {
     setDate(new Date().toLocaleDateString("fr-FR"));
@@ -187,6 +211,19 @@ export function SimulateurTicket({
   const cac = r.chantiers ? r.total / r.chantiers : 0;
   const marcheUtile = ads ? Math.max(0, Math.min(100, ((ads - r.adsGaspille) / ads) * 100)) : 0;
   const villeLabel = match.commune ? `${match.commune[0]} (${match.commune[2]})` : ville || "France";
+  const currentSnapshot: SimSnapshot = {
+    metier: metier.nom,
+    ville: match.commune?.[0] ?? ville.trim(),
+    zoneLabel: match.zone.label,
+    budget,
+    ads,
+    lsa,
+    panier,
+    transfo,
+    chantiers: r.chantiers,
+    ca: r.ca,
+    roi: r.roi,
+  };
   const compatibles = metiers.filter((m) => m.lsa).map((m) => m.nom);
   const incompatibles = metiers.filter((m) => !m.lsa).map((m) => m.nom);
 
@@ -194,6 +231,7 @@ export function SimulateurTicket({
   const touch = () => {
     if (interacted.current) return;
     interacted.current = true;
+    setHasInteracted(true);
     onInteract?.();
   };
 
@@ -249,7 +287,7 @@ export function SimulateurTicket({
   }, [r.ca]);
 
   return (
-    <div className="font-helvetica text-[#071a33] [font-variant-numeric:tabular-nums]">
+    <div className={`font-helvetica text-[#071a33] [font-variant-numeric:tabular-nums] ${hasInteracted ? "pb-24 md:pb-0" : ""}`}>
       {/* Ordre mobile (les deux wrappers de colonne sont en `contents`,
           leurs panneaux deviennent des items de la grille) : CA potentiel
           → Réglages → Ticket → Canaux. Sur lg, les wrappers redeviennent
@@ -359,7 +397,7 @@ export function SimulateurTicket({
         {/* Pas d'overflow-hidden : les infobulles des DarkStat doivent
             pouvoir déborder du panneau (le seul décor absolu est une
             ligne inset, rien ne dépasse). */}
-        <div className="relative order-1 border-2 border-[#071a33] bg-[#071a33] p-5 text-white sm:p-6 lg:order-none">
+        <div ref={resultRef} className="relative order-1 border-2 border-[#071a33] bg-[#071a33] p-5 text-white sm:p-6 lg:order-none">
           <div className="pointer-events-none absolute inset-x-5 top-20 h-px bg-white/15" />
           <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/60">
             <Target className="size-4 text-white" aria-hidden />
@@ -442,26 +480,15 @@ export function SimulateurTicket({
       </aside>
       </div>
 
-      <div className="mt-5 print:hidden">
+      <div ref={conversionRef} className="mt-5 scroll-mt-6 print:hidden">
         {(onContinue || ctaHref) && (
           <>
             <button
               type="button"
               onClick={() => {
+                onMark?.("cta_clicked");
                 if (onContinue) {
-                  onContinue({
-                    metier: metier.nom,
-                    ville: match.commune?.[0] ?? ville.trim(),
-                    zoneLabel: match.zone.label,
-                    budget,
-                    ads,
-                    lsa,
-                    panier,
-                    transfo,
-                    chantiers: r.chantiers,
-                    ca: r.ca,
-                    roi: r.roi,
-                  });
+                  onContinue(currentSnapshot);
                   return;
                 }
                 if (ctaHref) window.location.assign(ctaHref);
@@ -477,7 +504,7 @@ export function SimulateurTicket({
             <p className="mt-4">
               <ExportPdf asLink />
             </p>
-            <div className="mt-6">
+            <div ref={estimateRef} className="mt-6 scroll-mt-24">
               <EmailEtude
                 snapshot={{
                   metier: metier.nom,
@@ -488,12 +515,31 @@ export function SimulateurTicket({
                   ca: Math.round(r.ca),
                   chantiers: +r.chantiers.toFixed(1),
                 }}
+                onCapture={onEstimateRequested
+                  ? (email, snapshot) => onEstimateRequested(email, currentSnapshot, snapshot)
+                  : undefined}
               />
             </div>
           </>
         )}
         {!onContinue && !ctaHref && <ExportPdf />}
       </div>
+
+      {hasInteracted && !conversionReached && onContinue && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#d8e3f2] bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden print:hidden">
+          <button
+            type="button"
+            onClick={() => {
+              onMark?.("cta_clicked");
+              estimateRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="flex min-h-12 w-full items-center justify-center gap-2 bg-[#075ad8] px-4 text-base font-black text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#075ad8]"
+          >
+            Recevoir mon estimation gratuite
+            <span aria-hidden>→</span>
+          </button>
+        </div>
+      )}
 
       <div className="mt-5 flex flex-col gap-px print:hidden">
         <Fold title={simulateur.phrase.detail}>
@@ -691,19 +737,43 @@ function VilleField({
 
 /* Petit « i » en exposant à droite d'un chiffre : l'explication vit au
    survol (desktop) ET au tap (mobile — pas de hover en webview Insta).
-   La bulle s'ancre à gauche ou à droite de l'icône (`align`) pour ne
-   jamais sortir de l'écran ; normal-case/tracking-normal la protège des
-   styles uppercase des labels qui l'entourent. */
+   La bulle reste proche de l'icône, mais sa position horizontale est
+   clampée au viewport : près du bord, elle se décale au lieu de dépasser. */
 function Info({
   text,
   dark = false,
-  align = "left",
 }: {
   text: string;
   dark?: boolean;
   align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [pos, setPos] = useState({ left: 16, top: 0, width: 240 });
+
+  useEffect(() => {
+    if (!open) return;
+
+    const place = () => {
+      const button = buttonRef.current;
+      if (!button) return;
+      const rect = button.getBoundingClientRect();
+      const margin = 16;
+      const width = Math.min(240, window.innerWidth - margin * 2);
+      const centered = rect.left + rect.width / 2 - width / 2;
+      const left = Math.max(margin, Math.min(centered, window.innerWidth - width - margin));
+      setPos({ left, top: rect.bottom + 6, width });
+    };
+
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
+
   return (
     <span
       className="relative inline-block align-super"
@@ -711,6 +781,7 @@ function Info({
       onMouseLeave={() => setOpen(false)}
     >
       <button
+        ref={buttonRef}
         type="button"
         aria-label="Plus d'infos"
         aria-expanded={open}
@@ -727,9 +798,8 @@ function Info({
       {open && (
         <span
           role="tooltip"
-          className={`absolute top-full z-30 mt-1.5 block w-60 max-w-[calc(100vw-3rem)] border-2 border-[#071a33] bg-white p-3 text-left text-[11px] font-semibold normal-case leading-relaxed tracking-normal text-[#071a33] shadow-[4px_4px_0_#071a33] ${
-            align === "right" ? "right-0" : "left-0"
-          }`}
+          className="fixed z-50 block border-2 border-[#071a33] bg-white p-3 text-left text-[11px] font-semibold normal-case leading-relaxed tracking-normal text-[#071a33] shadow-[4px_4px_0_#071a33]"
+          style={{ left: pos.left, top: pos.top, width: pos.width }}
         >
           {text}
         </span>

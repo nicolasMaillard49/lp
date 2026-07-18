@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/email/client";
 import { baseUrl } from "@/lib/email/layout";
 import { logEmail } from "@/lib/email/log";
 import { etudeEmail, isEtudeSnapshot } from "@/lib/email/templates/etude";
+import { isValidEstimateEmail, normalizeEstimateEmail } from "@/lib/activation";
 
 export const runtime = "nodejs";
 
@@ -16,10 +17,6 @@ export const runtime = "nodejs";
    ────────────────────────────────────────────────────────────── */
 
 const ETUDE_TABLE = "etude_emails";
-
-/* Volontairement laxiste : rejeter un email valide coûte un prospect,
-   accepter un email cassé coûte une ligne en base. */
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
  * Clés du snapshot acceptées — whitelist explicite, comme la route
@@ -42,6 +39,20 @@ function sanitizeSnapshot(input: unknown): Record<string, string | number> | nul
   return Object.keys(out).length ? out : null;
 }
 
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function safeText(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim().slice(0, 200) : null;
+}
+
+function safeInteger(value: unknown): number | null {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? Math.round(number) : null;
+}
+
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
   try {
@@ -50,10 +61,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "bad json" }, { status: 400 });
   }
 
-  const email = String(body.email ?? "")
-    .trim()
-    .toLowerCase();
-  if (!email || email.length > 320 || !EMAIL_RE.test(email)) {
+  const email = normalizeEstimateEmail(body.email);
+  if (!isValidEstimateEmail(email)) {
     return NextResponse.json({ ok: false, error: "email invalide" }, { status: 400 });
   }
 
@@ -69,11 +78,35 @@ export async function POST(req: NextRequest) {
   }
 
   const snapshot = sanitizeSnapshot(body.snapshot);
-  const { data, error } = await supabase
-    .from(ETUDE_TABLE)
-    .insert({ email, snapshot })
-    .select("id, unsub_token")
-    .single();
+  let data: { id: string; unsub_token: string; created?: boolean } | null = null;
+  let error: { message: string } | null = null;
+
+  if (isUuid(body.session_id)) {
+    const answers = (body.answers ?? {}) as Record<string, unknown>;
+    const result = await supabase.rpc("capture_estimate", {
+      p_session_id: body.session_id,
+      p_visitor_id: isUuid(body.visitor_id) ? body.visitor_id : null,
+      p_email: email,
+      p_snapshot: snapshot,
+      p_activite: safeText(answers.activite),
+      p_ville: safeText(answers.ville),
+      p_budget_ads: safeInteger(answers.budget_ads),
+      p_budget_lsa: safeInteger(answers.budget_lsa),
+      p_sim_panier: safeInteger(answers.sim_panier),
+      p_sim_transfo: safeInteger(answers.sim_transfo),
+      p_sim_ca_estime: safeInteger(answers.sim_ca_estime),
+    });
+    error = result.error;
+    data = Array.isArray(result.data) ? result.data[0] ?? null : result.data;
+  } else {
+    const result = await supabase
+      .from(ETUDE_TABLE)
+      .insert({ email, snapshot })
+      .select("id, unsub_token")
+      .single();
+    error = result.error;
+    data = result.data;
+  }
   if (error || !data) {
     console.error("[api/etude]", error?.message ?? "insert sans retour");
     return NextResponse.json({ ok: false, error: "db error" }, { status: 500 });
@@ -81,7 +114,7 @@ export async function POST(req: NextRequest) {
 
   /* Email #1 (étude ROI) — best-effort ET hors du chemin de réponse :
      after() envoie après que le prospect a reçu son { ok: true }. */
-  after(async () => {
+  if (data.created !== false) after(async () => {
     try {
       if (isEtudeSnapshot(snapshot)) {
         const token = String(data.unsub_token);

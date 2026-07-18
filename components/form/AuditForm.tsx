@@ -155,7 +155,7 @@ export function AuditForm({
   /* Le hook est toujours appelé (règle des hooks), mais n'émet `visit`
      que s'il n'y a pas de session parente — sinon on créerait deux
      sessions pour un seul visiteur. */
-  const own = useAuditSession("/api/audit", { autoVisit: !session });
+  const own = useAuditSession("/api/audit", { autoVisit: !session, entrypoint: "audit" });
   const { progress, submit, mark } = session ?? own;
 
   /* Jalon `form_opened` : le form s'est réellement affiché — clic CTA sur
