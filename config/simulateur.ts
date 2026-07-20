@@ -347,10 +347,18 @@ export const simulateur = {
    * envoie l'étude à la main dans un premier temps (voir /api/etude).
    */
   etude: {
-    titre: "Garde ton étude",
+    /** Libellé du bouton qui ouvre la popup de capture. */
+    cta: "Recevoir mon estimation gratuite",
+    titre: "Reçois ton estimation par email",
+    sousTitre:
+      "On t'envoie l'étude détaillée (chantiers, chiffre d'affaires, budget) directement dans ta boîte mail.",
     placeholder: "ton@email.fr",
-    bouton: "Recevoir par email",
+    bouton: "Recevoir mon estimation",
+    /** Prévention affichée avant l'envoi. */
+    spam: "Pense à vérifier tes spams et l'onglet Publicités / Promotions : l'email peut y atterrir.",
     merci: "C'est noté — ton étude arrive par email.",
+    merciSpam:
+      "Elle peut tomber dans les spams ou l'onglet Publicités / Promotions : pense à y jeter un œil.",
     erreur: "Ça n'est pas passé — vérifie ton email et réessaie.",
   },
 

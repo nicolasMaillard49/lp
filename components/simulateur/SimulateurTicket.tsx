@@ -18,7 +18,7 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
-import { EmailEtude } from "@/components/simulateur/EmailEtude";
+import { EstimationModal } from "@/components/simulateur/EstimationModal";
 import type { EtudeSnapshot } from "@/lib/email/templates/etude";
 import { useActivationTracking } from "@/hooks/useActivationTracking";
 import type { ActivationMark } from "@/lib/activation";
@@ -170,7 +170,7 @@ export function SimulateurTicket({
   const [conversionReached, setConversionReached] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const conversionRef = useRef<HTMLDivElement>(null);
-  const estimateRef = useRef<HTMLDivElement>(null);
+  const [estimateOpen, setEstimateOpen] = useState(false);
   /* Miroir de animatedCa lisible hors cycle React : le restart
      d'animation (retour d'onglet caché) doit repartir de la valeur
      réellement affichée, pas d'une closure périmée. */
@@ -223,6 +223,17 @@ export function SimulateurTicket({
     chantiers: r.chantiers,
     ca: r.ca,
     roi: r.roi,
+  };
+  /* Accès au formulaire d'audit : sur la LP on démarre le parcours inline
+     (onContinue), sur /simulateur on navigue vers ctaHref (/audit). Partagé
+     entre le gros CTA et la popup estimation. */
+  const goToAudit = () => {
+    onMark?.("cta_clicked");
+    if (onContinue) {
+      onContinue(currentSnapshot);
+      return;
+    }
+    if (ctaHref) window.location.assign(ctaHref);
   };
   const compatibles = metiers.filter((m) => m.lsa).map((m) => m.nom);
   const incompatibles = metiers.filter((m) => !m.lsa).map((m) => m.nom);
@@ -485,14 +496,7 @@ export function SimulateurTicket({
           <>
             <button
               type="button"
-              onClick={() => {
-                onMark?.("cta_clicked");
-                if (onContinue) {
-                  onContinue(currentSnapshot);
-                  return;
-                }
-                if (ctaHref) window.location.assign(ctaHref);
-              }}
+              onClick={goToAudit}
               className="flex min-h-16 w-full items-center justify-center gap-3 bg-[#075ad8] px-6 py-5 text-xl font-black text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#075ad8] sm:text-2xl"
             >
               <span>{ctaLabel ?? simulateur.cta}</span>
@@ -504,26 +508,37 @@ export function SimulateurTicket({
             <p className="mt-4">
               <ExportPdf asLink />
             </p>
-            <div ref={estimateRef} className="mt-6 scroll-mt-24">
-              <EmailEtude
-                snapshot={{
-                  metier: metier.nom,
-                  ville: match.commune?.[0] ?? ville.trim(),
-                  budget: total,
-                  net: Math.round(r.marge - r.total),
-                  roi: +r.roi.toFixed(1),
-                  ca: Math.round(r.ca),
-                  chantiers: +r.chantiers.toFixed(1),
-                }}
-                onCapture={onEstimateRequested
-                  ? (email, snapshot) => onEstimateRequested(email, currentSnapshot, snapshot)
-                  : undefined}
-              />
-            </div>
+            <button
+              type="button"
+              onClick={() => setEstimateOpen(true)}
+              className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 border-2 border-sim-blue bg-white px-6 py-4 text-base font-black text-sim-blue transition-colors hover:bg-sim-blue hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sim-blue"
+            >
+              {simulateur.etude.cta}
+              <span aria-hidden>→</span>
+            </button>
           </>
         )}
         {!onContinue && !ctaHref && <ExportPdf />}
       </div>
+
+      <EstimationModal
+        open={estimateOpen}
+        onClose={() => setEstimateOpen(false)}
+        snapshot={{
+          metier: metier.nom,
+          ville: match.commune?.[0] ?? ville.trim(),
+          budget: total,
+          net: Math.round(r.marge - r.total),
+          roi: +r.roi.toFixed(1),
+          ca: Math.round(r.ca),
+          chantiers: +r.chantiers.toFixed(1),
+        }}
+        onCapture={onEstimateRequested
+          ? (email, snapshot) => onEstimateRequested(email, currentSnapshot, snapshot)
+          : undefined}
+        onAudit={goToAudit}
+        auditLabel={ctaLabel ?? simulateur.cta}
+      />
 
       {hasInteracted && !conversionReached && onContinue && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#d8e3f2] bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden print:hidden">
@@ -531,11 +546,11 @@ export function SimulateurTicket({
             type="button"
             onClick={() => {
               onMark?.("cta_clicked");
-              estimateRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+              setEstimateOpen(true);
             }}
             className="flex min-h-12 w-full items-center justify-center gap-2 bg-[#075ad8] px-4 text-base font-black text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#075ad8]"
           >
-            Recevoir mon estimation gratuite
+            {simulateur.etude.cta}
             <span aria-hidden>→</span>
           </button>
         </div>
