@@ -341,9 +341,9 @@ export function SimulateurTicket({
                 />
                 <MiniStat
                   icon={<Settings2 className="size-4" />}
-                  value={`${eur(nmf)}/mois`}
+                  value="Forfait fixe"
                   label="NMF"
-                  info="Forfait de gestion NMF, fixe : campagnes, annonces, suivi et optimisation. Ne varie pas avec ton budget."
+                  info="Forfait de gestion NMF : campagnes, annonces, suivi et optimisation. Il est déjà déduit du budget affiché et ne varie pas avec lui — on te donne le montant lors de l'échange."
                 />
               </div>
             </div>
@@ -583,7 +583,7 @@ export function SimulateurTicket({
             <Slider label="Lead vers chantier" value={transfo} display={`${transfo} %`} min={10} max={70} step={5} onChange={(v) => { touch(); setTransfo(v); }} />
             <Slider label="Panier moyen" value={panier} display={eur(panier)} min={100} max={8000} step={100} onChange={(v) => { touch(); setPanier(v); }} />
             <div className="border-2 border-[#071a33] bg-white px-3 py-2.5">
-              <Row label="Gestion NMF" value={`${eur(nmf)} / mois`} />
+              <Row label="Gestion NMF" value="Forfait fixe" />
               <p className="mt-1 text-[11px] text-[#607089]">{simulateur.params.gestionHint}</p>
             </div>
           </div>
