@@ -15,7 +15,6 @@ import {
   ReceiptText,
   Search,
   Settings2,
-  ShieldCheck,
   Target,
 } from "lucide-react";
 import { EstimationModal } from "@/components/simulateur/EstimationModal";
@@ -396,12 +395,6 @@ export function SimulateurTicket({
           />
         </div>
       </section>
-
-        <Panel icon={<ChartNoAxesColumnIncreasing className="size-4" />} title="Canaux" className="order-4 lg:order-none">
-          <IconRow icon={<Search className="size-4" />} label="Google Ads" value={`${eur(ads)} / mois`} />
-          <IconRow icon={<ShieldCheck className="size-4" />} label="Local Services" value={metier.lsa ? `${eur(lsa)} / mois` : "non actif"} />
-          <IconRow icon={<Settings2 className="size-4" />} label="Gestion" value={`${eur(nmf)} / mois`} />
-        </Panel>
       </div>
 
       <aside className="contents lg:flex lg:flex-col lg:gap-6">
@@ -939,18 +932,6 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-baseline justify-between gap-4 border-b border-[#d8e0ec] pb-2 text-sm">
       <span className="font-semibold text-[#607089]">{label}</span>
       <span className="font-black text-[#071a33]">{value}</span>
-    </div>
-  );
-}
-
-function IconRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-[#d8e0ec] pb-2 text-sm">
-      <span className="flex min-w-0 items-center gap-2 font-semibold text-[#607089]">
-        <span className="shrink-0 text-[#075ad8]" aria-hidden>{icon}</span>
-        <span className="truncate">{label}</span>
-      </span>
-      <span className="shrink-0 font-black text-[#071a33]">{value}</span>
     </div>
   );
 }
